@@ -18,6 +18,8 @@ body {
   color: var(--neon-cyan);
   overflow: hidden;
   cursor: crosshair;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cyber-grid {
@@ -485,6 +487,9 @@ button {
   text-transform: uppercase;
   letter-spacing: 2px;
   transition: all 0.3s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 button::before {
@@ -557,7 +562,22 @@ button.stats-btn:hover {
   padding: 40px;
   max-width: 600px;
   width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
   clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+}
+
+.hack-sequence::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hack-sequence::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.hack-sequence::-webkit-scrollbar-thumb {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
 }
 
 .hack-title, .stats-title {
@@ -600,6 +620,7 @@ button.stats-btn:hover {
   gap: 15px;
   margin-bottom: 30px;
   flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .pattern-symbol {
@@ -616,6 +637,7 @@ button.stats-btn:hover {
   text-shadow: 0 0 10px var(--neon-cyan);
   animation: symbolPulse 1s infinite;
   animation-delay: calc(var(--index) * 0.1s);
+  flex-shrink: 0;
 }
 
 @keyframes symbolPulse {
@@ -643,12 +665,20 @@ button.stats-btn:hover {
   align-items: center;
   justify-content: center;
   text-shadow: 0 0 10px var(--neon-cyan);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .hack-key:hover {
   background: rgba(0, 255, 255, 0.3);
   box-shadow: 0 0 20px var(--neon-cyan);
   transform: scale(1.05);
+}
+
+.hack-key:active {
+  transform: scale(0.95);
+  background: rgba(0, 255, 255, 0.4);
 }
 
 .hack-key:active { transform: scale(0.95); }
@@ -800,6 +830,213 @@ button.stats-btn:hover {
   
   .user-email {
     font-size: 0.75rem;
+  }
+  
+  /* Hack Modal Mobile Fixes */
+  .hack-sequence {
+    padding: 20px 15px;
+    width: 95%;
+    max-height: 85vh;
+  }
+  
+  .hack-title {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+  
+  .hack-instruction {
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+  }
+  
+  .hack-timer-bar {
+    height: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .hack-pattern {
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  
+  .pattern-symbol {
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
+  }
+  
+  .hack-input-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .hack-key {
+    font-size: 1.5rem;
+    min-height: 50px;
+  }
+  
+  .hack-progress {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .title { font-size: 1.5rem; }
+  .subtitle { font-size: 0.7rem; letter-spacing: 2px; }
+  
+  /* Even smaller screens */
+  .hack-sequence {
+    padding: 15px 10px;
+    width: 98%;
+    max-height: 90vh;
+  }
+  
+  .hack-title {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+  }
+  
+  .hack-instruction {
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+  
+  .hack-timer-bar {
+    height: 12px;
+    margin-bottom: 15px;
+  }
+  
+  .hack-pattern {
+    gap: 6px;
+    margin-bottom: 15px;
+  }
+  
+  .pattern-symbol {
+    width: 38px;
+    height: 38px;
+    font-size: 1.3rem;
+  }
+  
+  .hack-input-grid {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .hack-key {
+    font-size: 1.3rem;
+    min-height: 45px;
+  }
+  
+  .hack-progress {
+    font-size: 0.9rem;
+  }
+  
+  .audio-controls {
+    padding: 6px 10px;
+  }
+  
+  .audio-btn {
+    font-size: 1rem;
+  }
+  
+  .volume-slider {
+    width: 50px;
+  }
+}
+
+@media (max-height: 700px) {
+  /* For short screens (landscape phones) */
+  .hack-sequence {
+    padding: 15px;
+    max-height: 95vh;
+  }
+  
+  .hack-title {
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+  }
+  
+  .hack-instruction {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+  }
+  
+  .hack-timer-bar {
+    height: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .hack-pattern {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .pattern-symbol {
+    width: 40px;
+    height: 40px;
+    font-size: 1.4rem;
+  }
+  
+  .hack-input-grid {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .hack-key {
+    font-size: 1.4rem;
+    min-height: 45px;
+  }
+  
+  .hack-progress {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-height: 600px) {
+  /* Very short screens */
+  .hack-sequence {
+    padding: 10px;
+  }
+  
+  .hack-title {
+    font-size: 1.1rem;
+    margin-bottom: 3px;
+  }
+  
+  .hack-instruction {
+    font-size: 0.7rem;
+    margin-bottom: 8px;
+  }
+  
+  .hack-timer-bar {
+    height: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .hack-pattern {
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  
+  .pattern-symbol {
+    width: 35px;
+    height: 35px;
+    font-size: 1.2rem;
+  }
+  
+  .hack-input-grid {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  
+  .hack-key {
+    font-size: 1.2rem;
+    min-height: 40px;
+  }
+  
+  .hack-progress {
+    font-size: 0.85rem;
   }
 }
 
