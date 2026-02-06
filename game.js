@@ -219,9 +219,11 @@ function handleNodeClick(index, nodeElement) {
     comboEl.textContent = 'x0';
     createParticles(nodeElement, '#ff0000');
     scoreEl.textContent = gameState.score;
+    if (window.audio) window.audio.playFirewallHit();
     return;
   }
 
+  if (window.audio) window.audio.playNodeClick();
   startHackSequence(index, nodeElement);
 }
 
@@ -265,6 +267,11 @@ function displayPattern() {
     symbolEl.textContent = symbol;
     symbolEl.style.setProperty('--index', index);
     patternDiv.appendChild(symbolEl);
+    
+    // Play sound for each symbol
+    if (window.audio) {
+      setTimeout(() => window.audio.playSymbolAppear(), index * 100);
+    }
   });
 }
 
@@ -290,11 +297,13 @@ function handleSymbolInput(symbol, keyElement) {
   if (symbol === hackSequence.pattern[currentIndex]) {
     keyElement.classList.add('correct');
     updateHackProgress();
+    if (window.audio) window.audio.playCorrectInput();
     if (hackSequence.input.length === hackSequence.pattern.length) {
       setTimeout(() => completeHackSequence(), 300);
     }
   } else {
     keyElement.classList.add('wrong');
+    if (window.audio) window.audio.playWrongInput();
     setTimeout(() => failHackSequence(), 500);
   }
   
@@ -358,6 +367,13 @@ function completeHackSequence() {
   createParticles(nodeElement, '#00ffff');
   updateProgress();
   addXPToProfile(xpGain, nodeElement);
+  
+  // Play sounds
+  if (window.audio) {
+    window.audio.playHackSuccess();
+    window.audio.playCombo(gameState.combo);
+    window.audio.playXPGain();
+  }
 
   if (gameState.hackedNodes.size >= GRID_SIZE - FIREWALL_COUNT) {
     endGame(true);
@@ -394,6 +410,9 @@ function showLevelUp(level) {
   document.body.appendChild(levelUpText);
   setTimeout(() => levelUpText.remove(), 2000);
   
+  // Play level up sound
+  if (window.audio) window.audio.playLevelUp();
+  
   for (let i = 0; i < 50; i++) {
     setTimeout(() => {
       const particle = document.createElement('div');
@@ -425,6 +444,7 @@ function failHackSequence() {
   gameState.combo = 0;
   comboEl.textContent = 'x0';
   addLog('> BREACH SEQUENCE FAILED! COMBO RESET', 'error');
+  if (window.audio) window.audio.playHackFail();
 }
 
 function getAdjacentNodes(index) {
@@ -526,6 +546,8 @@ document.getElementById('startBtn').addEventListener('click', () => {
   addLog('> BREACH INITIATED', 'success');
   addLog('> COMPLETE HACK SEQUENCES TO INFILTRATE NODES', 'warning');
   addLog('> BUILD COMBOS AND LEVEL UP FOR MASSIVE REWARDS!', 'warning');
+  
+  if (window.audio) window.audio.playButtonClick();
 });
 
 function resetGame() {
@@ -605,6 +627,8 @@ function endGame(won) {
     document.getElementById('victoryXP').textContent = gameState.sessionXP;
     document.getElementById('victoryTime').textContent = formatTime(timeElapsed);
     victory.classList.add('show');
+    
+    if (window.audio) window.audio.playVictory();
   }
 }
 
@@ -634,3 +658,41 @@ document.getElementById('closeStatsBtn').addEventListener('click', () => {
 // Initialize on load
 updateProfileUI();
 initGrid();
+
+
+// Audio Controls
+document.getElementById('audioToggle').addEventListener('click', () => {
+  if (window.audio) {
+    const enabled = window.audio.toggle();
+    const icon = document.getElementById('audioIcon');
+    const btn = document.getElementById('audioToggle');
+    
+    if (enabled) {
+      icon.textContent = '🔊';
+      btn.classList.remove('muted');
+      window.audio.unmute();
+    } else {
+      icon.textContent = '🔇';
+      btn.classList.add('muted');
+      window.audio.mute();
+    }
+    
+    if (window.audio) window.audio.playButtonClick();
+  }
+});
+
+document.getElementById('volumeSlider').addEventListener('input', (e) => {
+  if (window.audio) {
+    const volume = e.target.value / 100;
+    window.audio.setVolume(volume);
+  }
+});
+
+// Add button click sounds to all buttons
+document.querySelectorAll('button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (window.audio && btn.id !== 'audioToggle') {
+      window.audio.playButtonClick();
+    }
+  });
+});

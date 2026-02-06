@@ -17,6 +17,14 @@
     <button id="logoutBtn" class="logout-btn">LOGOUT</button>
   </div>
 
+  <!-- Audio Controls -->
+  <div class="audio-controls">
+    <button id="audioToggle" class="audio-btn" title="Toggle Sound">
+      <span id="audioIcon">🔊</span>
+    </button>
+    <input type="range" id="volumeSlider" min="0" max="100" value="30" class="volume-slider" title="Volume">
+  </div>
+
   <!-- Auth Modal -->
   <div class="auth-modal show" id="authModal">
     <div class="auth-box">
@@ -175,6 +183,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <!-- Game Scripts -->
+  <script src="audio.js"></script>
   <script src="auth.js"></script>
   <script src="game.js"></script>
 </body>

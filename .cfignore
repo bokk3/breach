@@ -1,0 +1,9 @@
+# Cloudflare Pages - Ignore these files/folders
+.git/
+.vscode/
+node_modules/
+*.md
+!README.md
+*.txt
+firebase-config-template.js
+cyber-breach.html
