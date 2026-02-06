@@ -60,6 +60,11 @@ class PlayerProfile {
       fastestWin: this.fastestWin,
       totalNodesHacked: this.totalNodesHacked
     }));
+    
+    // Save to cloud if user is logged in
+    if (typeof window.saveProfileToCloud === 'function') {
+      window.saveProfileToCloud();
+    }
   }
 
   getXPNeeded() {

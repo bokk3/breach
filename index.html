@@ -10,6 +10,40 @@
 <body>
   <div class="cyber-grid"></div>
   <div class="scanline"></div>
+
+  <!-- User Info Bar (shown when logged in) -->
+  <div class="user-info" id="userInfo" style="display: none;">
+    <span class="user-email" id="userEmail"></span>
+    <button id="logoutBtn" class="logout-btn">LOGOUT</button>
+  </div>
+
+  <!-- Auth Modal -->
+  <div class="auth-modal show" id="authModal">
+    <div class="auth-box">
+      <h2 class="auth-title">⚡ AGENT LOGIN ⚡</h2>
+      <p class="auth-subtitle">Sync your progress across devices</p>
+      
+      <div class="auth-error" id="authError" style="display: none;"></div>
+      
+      <input type="email" id="emailInput" placeholder="Email" class="auth-input" autocomplete="email">
+      <input type="password" id="passwordInput" placeholder="Password (min 6 chars)" class="auth-input" autocomplete="current-password">
+      
+      <button id="loginBtn" class="auth-btn">LOGIN</button>
+      <button id="signupBtn" class="auth-btn signup">SIGN UP</button>
+      
+      <div class="auth-divider">
+        <span>OR</span>
+      </div>
+      
+      <button id="googleBtn" class="auth-btn google">
+        <span class="google-icon">G</span> SIGN IN WITH GOOGLE
+      </button>
+      
+      <button id="guestBtn" class="auth-btn guest">PLAY AS GUEST</button>
+      
+      <p class="auth-note">Guest mode saves progress locally only</p>
+    </div>
+  </div>
   
   <div class="container">
     <h1 class="title">CYBER BREACH</h1>
@@ -135,6 +169,13 @@
     </div>
   </div>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <!-- Game Scripts -->
+  <script src="auth.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
