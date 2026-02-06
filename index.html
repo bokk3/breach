@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBER BREACH // Neural Network Infiltration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="cyber-grid"></div>
+  <div class="scanline"></div>
+  
+  <div class="container">
+    <h1 class="title">CYBER BREACH</h1>
+    <div class="subtitle">Neural Network Infiltration</div>
+    
+    <!-- Player Profile -->
+    <div class="profile-container">
+      <div class="profile-header">
+        <div class="profile-info">
+          <div class="profile-name">AGENT <span id="playerLevel">1</span></div>
+          <div class="profile-stats">
+            <span class="profile-stat">Total XP: <span id="totalXP">0</span></span>
+            <span class="profile-stat">High Score: <span id="highScore">0</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="xp-bar-container">
+        <div class="xp-bar" id="globalXPBar"></div>
+        <div class="xp-bar-text" id="globalXPBarText">Level 1 - 0 / 100 XP</div>
+      </div>
+    </div>
+    
+    <!-- Session Stats -->
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Combo</div>
+        <div class="stat-value" id="combo" style="color: var(--neon-magenta); text-shadow: 0 0 10px var(--neon-magenta);">x0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Moves</div>
+        <div class="stat-value" id="moves">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="timer">00:00</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Session XP</div>
+        <div class="stat-value" id="sessionXP" style="color: var(--neon-yellow); text-shadow: 0 0 10px var(--neon-yellow);">0</div>
+      </div>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progress"></div>
+      <div class="progress-text" id="progressText">0% INFILTRATED</div>
+    </div>
+    
+    <div class="game-area">
+      <div class="node-grid" id="grid"></div>
+      
+      <div class="terminal" id="terminal">
+        <div class="log-entry log-success">> SYSTEM INITIALIZED</div>
+        <div class="log-entry">> AWAITING CONNECTION...</div>
+        <div class="log-entry log-warning">> SELECT A NODE TO BEGIN INFILTRATION</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button id="startBtn">INITIATE BREACH</button>
+      <button class="reset" id="resetBtn">RESET NETWORK</button>
+      <button class="stats-btn" id="statsBtn">VIEW STATS</button>
+    </div>
+  </div>
+
+  <!-- Hack Sequence Modal -->
+  <div class="hack-modal" id="hackModal">
+    <div class="hack-sequence">
+      <div class="hack-title">⚡ BREACH SEQUENCE ⚡</div>
+      <div class="hack-instruction">MEMORIZE AND INPUT THE PATTERN!</div>
+      
+      <div class="hack-timer-bar">
+        <div class="hack-timer-fill" id="hackTimer"></div>
+      </div>
+      
+      <div class="hack-pattern" id="hackPattern"></div>
+      
+      <div class="hack-input-grid" id="hackInputGrid"></div>
+      
+      <div class="hack-progress" id="hackProgress">0 / 0</div>
+    </div>
+  </div>
+
+  <!-- Victory Screen -->
+  <div class="victory" id="victory">
+    <div class="victory-content">
+      <div class="victory-title">BREACH COMPLETE</div>
+      <div class="subtitle">SYSTEM COMPROMISED</div>
+      <div class="victory-stats">
+        <div class="victory-stat">Score: <span id="victoryScore">0</span></div>
+        <div class="victory-stat">XP Gained: <span id="victoryXP">0</span></div>
+        <div class="victory-stat">Time: <span id="victoryTime">00:00</span></div>
+      </div>
+      <button style="margin-top: 40px;" id="playAgainBtn">INFILTRATE AGAIN</button>
+    </div>
+  </div>
+
+  <!-- Stats Modal -->
+  <div class="stats-modal" id="statsModal">
+    <div class="stats-content">
+      <div class="stats-title">AGENT STATISTICS</div>
+      <div class="stats-grid">
+        <div class="stats-section">
+          <h3>CAREER STATS</h3>
+          <div class="stats-item">Total Games: <span id="totalGames">0</span></div>
+          <div class="stats-item">Games Won: <span id="gamesWon">0</span></div>
+          <div class="stats-item">Win Rate: <span id="winRate">0%</span></div>
+          <div class="stats-item">Total XP: <span id="statsTotalXP">0</span></div>
+          <div class="stats-item">Current Level: <span id="statsLevel">1</span></div>
+        </div>
+        <div class="stats-section">
+          <h3>RECORDS</h3>
+          <div class="stats-item">High Score: <span id="statsHighScore">0</span></div>
+          <div class="stats-item">Best Combo: <span id="bestCombo">0</span></div>
+          <div class="stats-item">Fastest Win: <span id="fastestWin">--:--</span></div>
+          <div class="stats-item">Total Nodes Hacked: <span id="totalNodes">0</span></div>
+        </div>
+      </div>
+      <button class="close-stats" id="closeStatsBtn">CLOSE</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

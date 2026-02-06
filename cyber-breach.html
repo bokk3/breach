@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBER BREACH // Neural Network Infiltration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --neon-cyan: #00ffff;
+      --neon-magenta: #ff00ff;
+      --neon-yellow: #ffff00;
+      --deep-purple: #0a0015;
+      --grid-color: rgba(0, 255, 255, 0.1);
+    }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background: var(--deep-purple);
+      color: var(--neon-cyan);
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    /* Animated background grid */
+    .cyber-grid {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: gridScroll 20s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes gridScroll {
+      0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+      100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
+    }
+
+    /* Scanline effect */
+    .scanline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(0, 255, 255, 0.05) 50%
+      );
+      background-size: 100% 4px;
+      animation: scan 8s linear infinite;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    @keyframes scan {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(100%); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      min-height: 100vh;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+
+    /* Glitch title */
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 4rem;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 
+        0 0 10px var(--neon-cyan),
+        0 0 20px var(--neon-cyan),
+        0 0 40px var(--neon-cyan),
+        2px 2px 0 var(--neon-magenta),
+        -2px -2px 0 var(--neon-yellow);
+      animation: glitchTitle 3s infinite;
+      letter-spacing: 4px;
+    }
+
+    @keyframes glitchTitle {
+      0%, 90%, 100% { transform: translate(0); }
+      92% { transform: translate(-2px, 2px); text-shadow: 0 0 10px var(--neon-cyan), 3px 3px 0 var(--neon-magenta); }
+      94% { transform: translate(2px, -2px); text-shadow: 0 0 10px var(--neon-cyan), -3px -3px 0 var(--neon-yellow); }
+      96% { transform: translate(-1px, 1px); }
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--neon-magenta);
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 8px;
+      opacity: 0;
+      animation: fadeIn 1s ease-in 0.5s forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* XP and Level System */
+    .level-container {
+      background: rgba(0, 0, 0, 0.9);
+      border: 3px solid var(--neon-magenta);
+      box-shadow: 
+        0 0 30px rgba(255, 0, 255, 0.5),
+        inset 0 0 30px rgba(255, 0, 255, 0.1);
+      padding: 25px;
+      margin-bottom: 25px;
+      clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+    }
+
+    .level-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .level-info {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--neon-magenta);
+      text-shadow: 
+        0 0 20px var(--neon-magenta),
+        0 0 40px var(--neon-magenta);
+      animation: levelGlow 2s infinite;
+    }
+
+    @keyframes levelGlow {
+      0%, 100% { 
+        text-shadow: 
+          0 0 20px var(--neon-magenta),
+          0 0 40px var(--neon-magenta);
+      }
+      50% { 
+        text-shadow: 
+          0 0 30px var(--neon-magenta),
+          0 0 60px var(--neon-magenta),
+          0 0 80px var(--neon-magenta);
+      }
+    }
+
+    .xp-text {
+      font-size: 1.2rem;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    .xp-bar-container {
+      position: relative;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 2px solid var(--neon-magenta);
+      overflow: hidden;
+    }
+
+    .xp-bar {
+      height: 100%;
+      background: linear-gradient(90deg, 
+        var(--neon-magenta), 
+        var(--neon-cyan),
+        var(--neon-yellow),
+        var(--neon-magenta));
+      background-size: 200% 100%;
+      width: 0%;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 
+        0 0 30px var(--neon-magenta),
+        inset 0 0 20px rgba(255, 255, 255, 0.3);
+      animation: xpFlow 3s linear infinite;
+      position: relative;
+    }
+
+    @keyframes xpFlow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    .xp-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+      animation: xpShine 2s infinite;
+    }
+
+    @keyframes xpShine {
+      0% { left: -100%; }
+      100% { left: 200%; }
+    }
+
+    .xp-bar-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+      text-shadow: 
+        0 0 10px #000,
+        0 0 5px #000,
+        2px 2px 4px #000;
+      z-index: 10;
+    }
+
+    /* XP Gain Popup */
+    .xp-popup {
+      position: fixed;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--neon-yellow);
+      text-shadow: 
+        0 0 20px var(--neon-yellow),
+        0 0 40px var(--neon-yellow),
+        0 0 60px var(--neon-yellow);
+      pointer-events: none;
+      z-index: 1000;
+      animation: xpPopup 2s forwards;
+    }
+
+    @keyframes xpPopup {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      20% {
+        transform: translateY(-30px) scale(1.3);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-100px) scale(0.8);
+      }
+    }
+
+    /* Level Up Effect */
+    .level-up-flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255, 0, 255, 0.6), transparent 70%);
+      pointer-events: none;
+      z-index: 1500;
+      opacity: 0;
+      animation: levelUpFlash 1s;
+    }
+
+    @keyframes levelUpFlash {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+
+    .level-up-text {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 6rem;
+      font-weight: 900;
+      color: var(--neon-magenta);
+      text-shadow: 
+        0 0 30px var(--neon-magenta),
+        0 0 60px var(--neon-magenta),
+        0 0 90px var(--neon-magenta);
+      pointer-events: none;
+      z-index: 1600;
+      opacity: 0;
+      animation: levelUpText 2s;
+    }
+
+    @keyframes levelUpText {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5) rotateZ(-5deg);
+      }
+      20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2) rotateZ(2deg);
+      }
+      80% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotateZ(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5) rotateZ(0deg);
+      }
+    }
+
+    /* Game stats */
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 30px;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .stat-box {
+      flex: 1;
+      min-width: 140px;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid var(--neon-cyan);
+      box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.3),
+        inset 0 0 20px rgba(0, 255, 255, 0.1);
+      clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+      transition: all 0.3s;
+    }
+
+    .stat-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 
+        0 0 30px rgba(0, 255, 255, 0.6),
+        inset 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .stat-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 10px var(--neon-yellow);
+    }
+
+    /* Progress bar */
+    .progress-container {
+      margin: 20px 0;
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid var(--neon-cyan);
+      height: 25px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+      width: 0%;
+      transition: width 0.5s;
+      box-shadow: 0 0 20px var(--neon-cyan);
+    }
+
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-shadow: 0 0 5px #000;
+      z-index: 10;
+    }
+
+    /* Game grid */
+    .game-area {
+      position: relative;
+      background: rgba(0, 0, 0, 0.8);
+      border: 3px solid var(--neon-cyan);
+      box-shadow: 
+        0 0 40px rgba(0, 255, 255, 0.4),
+        inset 0 0 60px rgba(0, 255, 255, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .node-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+      position: relative;
+      padding: 20px;
+    }
+
+    /* Edge fade mask */
+    .node-grid::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.4) 70%, rgba(0, 0, 0, 0.9) 100%);
+      z-index: 5;
+    }
+
+    .node {
+      aspect-ratio: 1;
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid var(--neon-cyan);
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    /* Procedural variation */
+    .node.type-secure {
+      border-color: rgba(0, 255, 255, 0.5);
+      background: rgba(0, 255, 255, 0.05);
+    }
+
+    .node.type-valuable {
+      border-color: var(--neon-yellow);
+      background: rgba(255, 255, 0, 0.08);
+      box-shadow: 0 0 10px rgba(255, 255, 0, 0.3);
+    }
+
+    .node::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: radial-gradient(circle, rgba(0, 255, 255, 0.5), transparent);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.3s;
+    }
+
+    .node:hover::before {
+      width: 100%;
+      height: 100%;
+    }
+
+    .node.active {
+      background: rgba(0, 255, 255, 0.3);
+      box-shadow: 
+        0 0 20px var(--neon-cyan),
+        inset 0 0 20px var(--neon-cyan);
+      animation: pulse 1s infinite;
+      z-index: 10;
+    }
+
+    .node.hacked {
+      background: rgba(255, 0, 255, 0.3);
+      border-color: var(--neon-magenta);
+      box-shadow: 
+        0 0 20px var(--neon-magenta),
+        inset 0 0 20px var(--neon-magenta);
+    }
+
+    .node.firewall {
+      background: rgba(255, 255, 0, 0.2);
+      border-color: var(--neon-yellow);
+    }
+
+    .node.firewall::after {
+      content: '⚠';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 10px var(--neon-yellow);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Terminal */
+    .terminal {
+      background: #000;
+      border: 2px solid var(--neon-cyan);
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+      padding: 15px;
+      min-height: 120px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .terminal::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .terminal::-webkit-scrollbar-track {
+      background: #000;
+    }
+
+    .terminal::-webkit-scrollbar-thumb {
+      background: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    .log-entry {
+      opacity: 0;
+      animation: logAppear 0.3s forwards;
+      margin-bottom: 4px;
+    }
+
+    @keyframes logAppear {
+      from { 
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .log-success {
+      color: #00ff00;
+    }
+
+    .log-error {
+      color: #ff0000;
+    }
+
+    .log-warning {
+      color: var(--neon-yellow);
+    }
+
+    /* Buttons */
+    .controls {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 15px 40px;
+      background: transparent;
+      border: 2px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: all 0.3s;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: var(--neon-cyan);
+      transition: left 0.3s;
+      z-index: -1;
+    }
+
+    button:hover::before {
+      left: 0;
+    }
+
+    button:hover {
+      color: var(--deep-purple);
+      box-shadow: 0 0 20px var(--neon-cyan);
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    button.reset {
+      border-color: var(--neon-magenta);
+      color: var(--neon-magenta);
+    }
+
+    button.reset::before {
+      background: var(--neon-magenta);
+    }
+
+    button.reset:hover {
+      box-shadow: 0 0 20px var(--neon-magenta);
+    }
+
+    /* Hack sequence modal */
+    .hack-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .hack-modal.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .hack-sequence {
+      background: rgba(0, 0, 0, 0.9);
+      border: 3px solid var(--neon-cyan);
+      box-shadow: 
+        0 0 50px rgba(0, 255, 255, 0.6),
+        inset 0 0 50px rgba(0, 255, 255, 0.1);
+      padding: 40px;
+      max-width: 600px;
+      width: 90%;
+      clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+    }
+
+    .hack-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 10px;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 20px var(--neon-yellow);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+
+    .hack-instruction {
+      text-align: center;
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
+
+    .hack-timer-bar {
+      height: 20px;
+      background: rgba(255, 0, 0, 0.2);
+      border: 2px solid #ff0000;
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hack-timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff0000, var(--neon-yellow));
+      width: 100%;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 20px #ff0000;
+    }
+
+    .hack-pattern {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .pattern-symbol {
+      width: 60px;
+      height: 60px;
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid var(--neon-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px var(--neon-cyan);
+      animation: symbolPulse 1s infinite;
+      animation-delay: calc(var(--index) * 0.1s);
+    }
+
+    @keyframes symbolPulse {
+      0%, 100% { transform: scale(1); border-color: var(--neon-cyan); }
+      50% { transform: scale(1.1); border-color: var(--neon-yellow); }
+    }
+
+    .hack-input-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .hack-key {
+      aspect-ratio: 1;
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid var(--neon-cyan);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    .hack-key:hover {
+      background: rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 20px var(--neon-cyan);
+      transform: scale(1.05);
+    }
+
+    .hack-key:active {
+      transform: scale(0.95);
+    }
+
+    .hack-key.correct {
+      background: rgba(0, 255, 0, 0.3);
+      border-color: #00ff00;
+      color: #00ff00;
+      animation: correctFlash 0.5s;
+    }
+
+    .hack-key.wrong {
+      background: rgba(255, 0, 0, 0.3);
+      border-color: #ff0000;
+      color: #ff0000;
+      animation: wrongShake 0.5s;
+    }
+
+    @keyframes correctFlash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @keyframes wrongShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .hack-progress {
+      text-align: center;
+      font-size: 1.2rem;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 10px var(--neon-yellow);
+    }
+
+    /* Particle effects */
+    .particle {
+      position: fixed;
+      width: 3px;
+      height: 3px;
+      background: var(--neon-cyan);
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow: 0 0 10px var(--neon-cyan);
+      z-index: 999;
+    }
+
+    /* Victory screen */
+    .victory {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+
+    .victory.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .victory-content {
+      text-align: center;
+      animation: victoryPulse 2s infinite;
+    }
+
+    .victory-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 5rem;
+      font-weight: 900;
+      color: var(--neon-magenta);
+      text-shadow: 
+        0 0 20px var(--neon-magenta),
+        0 0 40px var(--neon-magenta),
+        0 0 60px var(--neon-magenta);
+      margin-bottom: 20px;
+    }
+
+    @keyframes victoryPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .title {
+        font-size: 2rem;
+      }
+      
+      .subtitle {
+        font-size: 0.8rem;
+        letter-spacing: 3px;
+      }
+      
+      .node-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        padding: 10px;
+      }
+      
+      .stat-box {
+        min-width: 120px;
+        padding: 12px;
+      }
+
+      .stat-value {
+        font-size: 1.4rem;
+      }
+      
+      .victory-title {
+        font-size: 3rem;
+      }
+
+      .level-info {
+        font-size: 1.8rem;
+      }
+
+      .level-up-text {
+        font-size: 3.5rem;
+      }
+
+      .node.firewall::after {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="cyber-grid"></div>
+  <div class="scanline"></div>
+  
+  <div class="container">
+    <h1 class="title">CYBER BREACH</h1>
+    <div class="subtitle">Neural Network Infiltration</div>
+    
+    <div class="level-container">
+      <div class="level-header">
+        <div class="level-info">LEVEL <span id="level">1</span></div>
+        <div class="xp-text"><span id="currentXP">0</span> / <span id="neededXP">100</span> XP</div>
+      </div>
+      <div class="xp-bar-container">
+        <div class="xp-bar" id="xpBar"></div>
+        <div class="xp-bar-text" id="xpBarText">0%</div>
+      </div>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Combo</div>
+        <div class="stat-value" id="combo" style="color: var(--neon-magenta); text-shadow: 0 0 10px var(--neon-magenta);">x0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Moves</div>
+        <div class="stat-value" id="moves">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="timer">00:00</div>
+      </div>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-bar" id="progress"></div>
+      <div class="progress-text" id="progressText">0% INFILTRATED</div>
+    </div>
+    
+    <div class="game-area">
+      <div class="node-grid" id="grid"></div>
+      
+      <div class="terminal" id="terminal">
+        <div class="log-entry log-success">> SYSTEM INITIALIZED</div>
+        <div class="log-entry">> AWAITING CONNECTION...</div>
+        <div class="log-entry log-warning">> SELECT A NODE TO BEGIN INFILTRATION</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button id="startBtn">INITIATE BREACH</button>
+      <button class="reset" id="resetBtn">RESET NETWORK</button>
+    </div>
+  </div>
+
+  <div class="hack-modal" id="hackModal">
+    <div class="hack-sequence">
+      <div class="hack-title">⚡ BREACH SEQUENCE ⚡</div>
+      <div class="hack-instruction">MEMORIZE AND INPUT THE PATTERN!</div>
+      
+      <div class="hack-timer-bar">
+        <div class="hack-timer-fill" id="hackTimer"></div>
+      </div>
+      
+      <div class="hack-pattern" id="hackPattern"></div>
+      
+      <div class="hack-input-grid" id="hackInputGrid"></div>
+      
+      <div class="hack-progress" id="hackProgress">0 / 0</div>
+    </div>
+  </div>
+
+  <div class="victory" id="victory">
+    <div class="victory-content">
+      <div class="victory-title">BREACH COMPLETE</div>
+      <div class="subtitle">SYSTEM COMPROMISED</div>
+      <button style="margin-top: 40px;" id="playAgainBtn">INFILTRATE AGAIN</button>
+    </div>
+  </div>
+
+  <script>
+    const GRID_SIZE = 48; // 8x6 grid
+    const FIREWALL_COUNT = 8;
+    const SYMBOLS = ['◆', '▲', '●', '■', '★', '✦', '◈', '◉'];
+    
+    let gameState = {
+      score: 0,
+      moves: 0,
+      level: 1,
+      xp: 0,
+      xpNeeded: 100,
+      totalXP: 0,
+      timeStarted: null,
+      timerInterval: null,
+      activeNode: null,
+      hackedNodes: new Set(),
+      firewallNodes: new Set(),
+      valuableNodes: new Set(),
+      gameStarted: false,
+      combo: 0
+    };
+
+    let hackSequence = {
+      pattern: [],
+      input: [],
+      timeLimit: 8000,
+      startTime: null,
+      timerInterval: null,
+      pendingNode: null,
+      pendingElement: null,
+      difficulty: 3
+    };
+
+    const grid = document.getElementById('grid');
+    const terminal = document.getElementById('terminal');
+    const scoreEl = document.getElementById('score');
+    const comboEl = document.getElementById('combo');
+    const movesEl = document.getElementById('moves');
+    const timerEl = document.getElementById('timer');
+    const progressBar = document.getElementById('progress');
+    const progressText = document.getElementById('progressText');
+    const victory = document.getElementById('victory');
+    const hackModal = document.getElementById('hackModal');
+    const levelEl = document.getElementById('level');
+    const currentXPEl = document.getElementById('currentXP');
+    const neededXPEl = document.getElementById('neededXP');
+    const xpBar = document.getElementById('xpBar');
+    const xpBarText = document.getElementById('xpBarText');
+
+    // Initialize grid with procedural generation
+    function initGrid() {
+      grid.innerHTML = '';
+      gameState.hackedNodes.clear();
+      gameState.firewallNodes.clear();
+      gameState.valuableNodes.clear();
+      
+      // Place firewalls randomly
+      while (gameState.firewallNodes.size < FIREWALL_COUNT) {
+        gameState.firewallNodes.add(Math.floor(Math.random() * GRID_SIZE));
+      }
+
+      // Place valuable nodes (2x XP)
+      const valuableCount = 6;
+      while (gameState.valuableNodes.size < valuableCount) {
+        const index = Math.floor(Math.random() * GRID_SIZE);
+        if (!gameState.firewallNodes.has(index)) {
+          gameState.valuableNodes.add(index);
+        }
+      }
+      
+      for (let i = 0; i < GRID_SIZE; i++) {
+        const node = document.createElement('div');
+        node.className = 'node';
+        node.dataset.index = i;
+        
+        // Procedural node types
+        if (gameState.firewallNodes.has(i)) {
+          node.classList.add('firewall');
+        } else if (gameState.valuableNodes.has(i)) {
+          node.classList.add('type-valuable');
+        } else if (Math.random() < 0.3) {
+          node.classList.add('type-secure');
+        }
+        
+        node.addEventListener('click', () => handleNodeClick(i, node));
+        grid.appendChild(node);
+      }
+    }
+
+    // Handle node click
+    function handleNodeClick(index, nodeElement) {
+      if (!gameState.gameStarted) {
+        addLog('> BREACH NOT INITIATED. START THE GAME FIRST.', 'error');
+        return;
+      }
+
+      if (gameState.hackedNodes.has(index)) {
+        addLog('> NODE ALREADY COMPROMISED', 'error');
+        return;
+      }
+
+      // Check if it's a firewall
+      if (gameState.firewallNodes.has(index)) {
+        addLog(`> FIREWALL DETECTED AT NODE ${index}! -50 POINTS`, 'error');
+        gameState.score = Math.max(0, gameState.score - 50);
+        gameState.combo = 0;
+        comboEl.textContent = 'x0';
+        createParticles(nodeElement, '#ff0000');
+        scoreEl.textContent = gameState.score;
+        return;
+      }
+
+      // Start hack sequence minigame
+      startHackSequence(index, nodeElement);
+    }
+
+    // Start hack sequence minigame
+    function startHackSequence(index, nodeElement) {
+      hackSequence.pendingNode = index;
+      hackSequence.pendingElement = nodeElement;
+      
+      // Increase difficulty based on combo
+      hackSequence.difficulty = Math.min(3 + Math.floor(gameState.combo / 3), 7);
+      
+      // Generate random pattern
+      hackSequence.pattern = [];
+      for (let i = 0; i < hackSequence.difficulty; i++) {
+        hackSequence.pattern.push(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
+      }
+      hackSequence.input = [];
+      
+      // Show modal
+      hackModal.classList.add('show');
+      displayPattern();
+      createInputGrid();
+      updateHackProgress();
+      
+      // Start timer
+      hackSequence.startTime = Date.now();
+      const timerFill = document.getElementById('hackTimer');
+      
+      hackSequence.timerInterval = setInterval(() => {
+        const elapsed = Date.now() - hackSequence.startTime;
+        const remaining = Math.max(0, hackSequence.timeLimit - elapsed);
+        const percentage = (remaining / hackSequence.timeLimit) * 100;
+        
+        timerFill.style.width = percentage + '%';
+        
+        if (remaining <= 0) {
+          failHackSequence();
+        }
+      }, 50);
+
+      addLog(`> INITIATING BREACH SEQUENCE - LEVEL ${hackSequence.difficulty}`, 'warning');
+    }
+
+    // Display pattern
+    function displayPattern() {
+      const patternDiv = document.getElementById('hackPattern');
+      patternDiv.innerHTML = '';
+      
+      hackSequence.pattern.forEach((symbol, index) => {
+        const symbolEl = document.createElement('div');
+        symbolEl.className = 'pattern-symbol';
+        symbolEl.textContent = symbol;
+        symbolEl.style.setProperty('--index', index);
+        patternDiv.appendChild(symbolEl);
+      });
+    }
+
+    // Create input grid
+    function createInputGrid() {
+      const gridDiv = document.getElementById('hackInputGrid');
+      gridDiv.innerHTML = '';
+      
+      // Shuffle symbols for input
+      const shuffled = [...SYMBOLS].sort(() => Math.random() - 0.5);
+      
+      shuffled.forEach(symbol => {
+        const key = document.createElement('button');
+        key.className = 'hack-key';
+        key.textContent = symbol;
+        key.addEventListener('click', () => handleSymbolInput(symbol, key));
+        gridDiv.appendChild(key);
+      });
+    }
+
+    // Handle symbol input
+    function handleSymbolInput(symbol, keyElement) {
+      const currentIndex = hackSequence.input.length;
+      
+      if (currentIndex >= hackSequence.pattern.length) return;
+      
+      hackSequence.input.push(symbol);
+      
+      // Check if correct
+      if (symbol === hackSequence.pattern[currentIndex]) {
+        keyElement.classList.add('correct');
+        updateHackProgress();
+        
+        // Check if sequence complete
+        if (hackSequence.input.length === hackSequence.pattern.length) {
+          setTimeout(() => completeHackSequence(), 300);
+        }
+      } else {
+        keyElement.classList.add('wrong');
+        setTimeout(() => failHackSequence(), 500);
+      }
+      
+      // Remove class after animation
+      setTimeout(() => {
+        keyElement.classList.remove('correct', 'wrong');
+      }, 500);
+    }
+
+    // Update hack progress
+    function updateHackProgress() {
+      const progressDiv = document.getElementById('hackProgress');
+      progressDiv.textContent = `${hackSequence.input.length} / ${hackSequence.pattern.length}`;
+    }
+
+    // Complete hack sequence with XP rewards
+    function completeHackSequence() {
+      clearInterval(hackSequence.timerInterval);
+      hackModal.classList.remove('show');
+      
+      const index = hackSequence.pendingNode;
+      const nodeElement = hackSequence.pendingElement;
+      
+      gameState.moves++;
+      movesEl.textContent = gameState.moves;
+
+      // Calculate combo bonus
+      gameState.combo++;
+      let bonus = 100;
+      let baseXP = 25;
+      
+      // Check if valuable node
+      if (gameState.valuableNodes.has(index)) {
+        baseXP *= 2;
+        bonus *= 1.5;
+        addLog(`> VALUABLE NODE DISCOVERED! BONUS XP!`, 'success');
+      }
+      
+      // Check adjacency bonus
+      if (gameState.activeNode !== null) {
+        const adjacentNodes = getAdjacentNodes(gameState.activeNode);
+        if (adjacentNodes.includes(index)) {
+          bonus = 200;
+        }
+      }
+      
+      // Combo multiplier
+      const comboMultiplier = 1 + (gameState.combo - 1) * 0.5;
+      bonus = Math.floor(bonus * comboMultiplier);
+      const xpGain = Math.floor(baseXP * comboMultiplier);
+      
+      addLog(`> NODE ${index} BREACHED! COMBO x${gameState.combo} +${bonus} +${xpGain}XP`, 'success');
+
+      gameState.score += bonus;
+      scoreEl.textContent = gameState.score;
+      comboEl.textContent = `x${gameState.combo}`;
+      comboEl.style.animation = 'none';
+      setTimeout(() => comboEl.style.animation = 'pulse 0.5s', 10);
+      
+      // Update node state
+      if (gameState.activeNode !== null) {
+        document.querySelector(`[data-index="${gameState.activeNode}"]`).classList.remove('active');
+      }
+      
+      gameState.activeNode = index;
+      nodeElement.classList.add('active', 'hacked');
+      gameState.hackedNodes.add(index);
+      
+      createParticles(nodeElement, '#00ffff');
+      updateProgress();
+      
+      // Add XP with visual feedback
+      addXP(xpGain, nodeElement);
+
+      // Check win condition
+      if (gameState.hackedNodes.size >= GRID_SIZE - FIREWALL_COUNT) {
+        endGame(true);
+      }
+    }
+
+    // Add XP with dopamine-heavy visual feedback
+    function addXP(amount, sourceElement) {
+      gameState.xp += amount;
+      gameState.totalXP += amount;
+      
+      // Create floating XP text
+      const rect = sourceElement.getBoundingClientRect();
+      const xpPopup = document.createElement('div');
+      xpPopup.className = 'xp-popup';
+      xpPopup.textContent = `+${amount} XP`;
+      xpPopup.style.left = rect.left + rect.width / 2 + 'px';
+      xpPopup.style.top = rect.top + 'px';
+      document.body.appendChild(xpPopup);
+      
+      setTimeout(() => xpPopup.remove(), 2000);
+      
+      // Update XP bar
+      updateXPBar();
+      
+      // Check for level up
+      while (gameState.xp >= gameState.xpNeeded) {
+        levelUp();
+      }
+    }
+
+    // Update XP bar
+    function updateXPBar() {
+      const percentage = (gameState.xp / gameState.xpNeeded) * 100;
+      xpBar.style.width = percentage + '%';
+      xpBarText.textContent = Math.floor(percentage) + '%';
+      currentXPEl.textContent = gameState.xp;
+    }
+
+    // Level up with massive visual feedback
+    function levelUp() {
+      gameState.xp -= gameState.xpNeeded;
+      gameState.level++;
+      gameState.xpNeeded = Math.floor(gameState.xpNeeded * 1.5);
+      
+      levelEl.textContent = gameState.level;
+      neededXPEl.textContent = gameState.xpNeeded;
+      updateXPBar();
+      
+      // Visual effects
+      const flash = document.createElement('div');
+      flash.className = 'level-up-flash';
+      document.body.appendChild(flash);
+      setTimeout(() => flash.remove(), 1000);
+      
+      const levelUpText = document.createElement('div');
+      levelUpText.className = 'level-up-text';
+      levelUpText.textContent = `LEVEL ${gameState.level}!`;
+      document.body.appendChild(levelUpText);
+      setTimeout(() => levelUpText.remove(), 2000);
+      
+      // Extra particles
+      for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+          const particle = document.createElement('div');
+          particle.className = 'particle';
+          particle.style.left = Math.random() * window.innerWidth + 'px';
+          particle.style.top = Math.random() * window.innerHeight + 'px';
+          particle.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+          particle.style.boxShadow = `0 0 20px hsl(${Math.random() * 360}, 100%, 50%)`;
+          document.body.appendChild(particle);
+          
+          let y = parseInt(particle.style.top);
+          const animate = () => {
+            y -= 5;
+            particle.style.top = y + 'px';
+            if (y > -50) requestAnimationFrame(animate);
+            else particle.remove();
+          };
+          animate();
+        }, i * 20);
+      }
+      
+      addLog(`> >>> LEVEL UP! NOW LEVEL ${gameState.level} <<<`, 'success');
+      addLog(`> INFILTRATION CAPABILITIES ENHANCED`, 'success');
+    }
+
+    // Fail hack sequence
+    function failHackSequence() {
+      clearInterval(hackSequence.timerInterval);
+      hackModal.classList.remove('show');
+      
+      gameState.combo = 0;
+      comboEl.textContent = 'x0';
+      addLog('> BREACH SEQUENCE FAILED! COMBO RESET', 'error');
+      addLog('> TRY AGAIN - ACCURACY AND SPEED ARE KEY', 'warning');
+    }
+
+    // Get adjacent nodes (8x6 grid)
+    function getAdjacentNodes(index) {
+      const cols = 8;
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+      const adjacent = [];
+      
+      if (col > 0) adjacent.push(index - 1); // left
+      if (col < cols - 1) adjacent.push(index + 1); // right
+      if (row > 0) adjacent.push(index - cols); // up
+      if (row < GRID_SIZE / cols - 1) adjacent.push(index + cols); // down
+      
+      return adjacent;
+    }
+
+    // Update progress
+    function updateProgress() {
+      const percentage = Math.round((gameState.hackedNodes.size / (GRID_SIZE - FIREWALL_COUNT)) * 100);
+      progressBar.style.width = percentage + '%';
+      progressText.textContent = `${percentage}% INFILTRATED`;
+    }
+
+    // Add log entry
+    function addLog(message, type = '') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type ? 'log-' + type : ''}`;
+      entry.textContent = message;
+      terminal.appendChild(entry);
+      terminal.scrollTop = terminal.scrollHeight;
+      
+      // Keep terminal from getting too long
+      if (terminal.children.length > 20) {
+        terminal.removeChild(terminal.firstChild);
+      }
+    }
+
+    // Create particle effect
+    function createParticles(element, color) {
+      const rect = element.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = centerX + 'px';
+        particle.style.top = centerY + 'px';
+        particle.style.background = color;
+        particle.style.boxShadow = `0 0 10px ${color}`;
+        
+        document.body.appendChild(particle);
+        
+        const angle = (Math.PI * 2 * i) / 20;
+        const velocity = 2 + Math.random() * 3;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity;
+        
+        let x = centerX;
+        let y = centerY;
+        let opacity = 1;
+        
+        const animate = () => {
+          x += vx;
+          y += vy;
+          opacity -= 0.02;
+          
+          particle.style.left = x + 'px';
+          particle.style.top = y + 'px';
+          particle.style.opacity = opacity;
+          
+          if (opacity > 0) {
+            requestAnimationFrame(animate);
+          } else {
+            particle.remove();
+          }
+        };
+        
+        animate();
+      }
+    }
+
+    // Timer
+    function startTimer() {
+      gameState.timeStarted = Date.now();
+      gameState.timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - gameState.timeStarted) / 1000);
+        const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const seconds = (elapsed % 60).toString().padStart(2, '0');
+        timerEl.textContent = `${minutes}:${seconds}`;
+      }, 1000);
+    }
+
+    // Start game
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (gameState.gameStarted) return;
+      
+      gameState.gameStarted = true;
+      gameState.score = 0;
+      gameState.moves = 0;
+      gameState.activeNode = null;
+      gameState.combo = 0;
+      
+      scoreEl.textContent = '0';
+      movesEl.textContent = '0';
+      
+      initGrid();
+      startTimer();
+      addLog('> BREACH INITIATED', 'success');
+      addLog('> COMPLETE HACK SEQUENCES TO INFILTRATE NODES', 'warning');
+      addLog('> BUILD COMBOS AND LEVEL UP FOR MASSIVE REWARDS!', 'warning');
+    });
+
+    // Reset game
+    function resetGame() {
+      if (gameState.timerInterval) {
+        clearInterval(gameState.timerInterval);
+      }
+      if (hackSequence.timerInterval) {
+        clearInterval(hackSequence.timerInterval);
+      }
+      
+      hackModal.classList.remove('show');
+      
+      gameState = {
+        score: 0,
+        moves: 0,
+        level: 1,
+        xp: 0,
+        xpNeeded: 100,
+        totalXP: 0,
+        timeStarted: null,
+        timerInterval: null,
+        activeNode: null,
+        hackedNodes: new Set(),
+        firewallNodes: new Set(),
+        valuableNodes: new Set(),
+        gameStarted: false,
+        combo: 0
+      };
+      
+      hackSequence = {
+        pattern: [],
+        input: [],
+        timeLimit: 8000,
+        startTime: null,
+        timerInterval: null,
+        pendingNode: null,
+        pendingElement: null,
+        difficulty: 3
+      };
+      
+      scoreEl.textContent = '0';
+      movesEl.textContent = '0';
+      comboEl.textContent = 'x0';
+      timerEl.textContent = '00:00';
+      levelEl.textContent = '1';
+      currentXPEl.textContent = '0';
+      neededXPEl.textContent = '100';
+      xpBar.style.width = '0%';
+      xpBarText.textContent = '0%';
+      progressBar.style.width = '0%';
+      progressText.textContent = '0% INFILTRATED';
+      victory.classList.remove('show');
+      
+      terminal.innerHTML = `
+        <div class="log-entry log-success">> SYSTEM INITIALIZED</div>
+        <div class="log-entry">> AWAITING CONNECTION...</div>
+        <div class="log-entry log-warning">> SELECT A NODE TO BEGIN INFILTRATION</div>
+      `;
+      
+      initGrid();
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+    document.getElementById('playAgainBtn').addEventListener('click', resetGame);
+
+    // End game
+    function endGame(won) {
+      if (gameState.timerInterval) {
+        clearInterval(gameState.timerInterval);
+      }
+      
+      if (won) {
+        addLog('> NETWORK FULLY COMPROMISED!', 'success');
+        addLog(`> FINAL SCORE: ${gameState.score}`, 'success');
+        addLog(`> FINAL LEVEL: ${gameState.level}`, 'success');
+        addLog(`> TOTAL XP EARNED: ${gameState.totalXP}`, 'success');
+        victory.classList.add('show');
+      }
+    }
+
+    // Initialize on load
+    initGrid();
+  </script>
+</body>
+</html>
