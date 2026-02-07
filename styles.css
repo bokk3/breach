@@ -534,6 +534,20 @@ button.stats-btn:hover {
   box-shadow: 0 0 20px var(--neon-yellow);
 }
 
+button.minigame-toggle {
+  border-color: var(--neon-magenta);
+  color: var(--neon-magenta);
+  font-size: 0.9rem;
+}
+
+button.minigame-toggle::before {
+  background: var(--neon-magenta);
+}
+
+button.minigame-toggle:hover {
+  box-shadow: 0 0 20px var(--neon-magenta);
+}
+
 .hack-modal, .victory, .stats-modal {
   position: fixed;
   top: 0;
@@ -1365,5 +1379,133 @@ button.stats-btn:hover {
   
   .user-email {
     font-size: 0.75rem;
+  }
+}
+
+
+/* Space Shooter Minigame Styles */
+.shooter-container {
+  background: rgba(0, 0, 0, 0.95);
+  border: 3px solid var(--neon-cyan);
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.6), inset 0 0 50px rgba(0, 255, 255, 0.1);
+  padding: 20px;
+  max-width: 900px;
+  width: 95%;
+  max-height: 90vh;
+  overflow: hidden;
+  clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+  display: flex;
+  flex-direction: column;
+}
+
+.shooter-hud {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.shooter-stat {
+  flex: 1;
+  min-width: 120px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 2px solid var(--neon-cyan);
+  padding: 10px;
+  text-align: center;
+}
+
+.shooter-label {
+  font-size: 0.8rem;
+  color: var(--neon-cyan);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.shooter-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 10px var(--neon-yellow);
+}
+
+.shooter-health-bar {
+  height: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--neon-cyan);
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.shooter-health-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #ff0000, #00ff00);
+  transition: width 0.3s;
+}
+
+.shooter-game {
+  flex: 1;
+  background: #000;
+  border: 2px solid var(--neon-cyan);
+  position: relative;
+  min-height: 400px;
+  max-height: 60vh;
+  overflow: hidden;
+}
+
+.shooter-game canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.shooter-controls {
+  margin-top: 15px;
+  text-align: center;
+  color: var(--neon-cyan);
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .shooter-container {
+    padding: 15px;
+  }
+  
+  .shooter-hud {
+    gap: 10px;
+  }
+  
+  .shooter-stat {
+    min-width: 100px;
+    padding: 8px;
+  }
+  
+  .shooter-label {
+    font-size: 0.7rem;
+  }
+  
+  .shooter-value {
+    font-size: 1.2rem;
+  }
+  
+  .shooter-game {
+    min-height: 300px;
+  }
+  
+  .shooter-controls {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .shooter-container {
+    padding: 10px;
+  }
+  
+  .shooter-game {
+    min-height: 250px;
   }
 }

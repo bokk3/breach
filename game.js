@@ -696,3 +696,83 @@ document.querySelectorAll('button').forEach(btn => {
     }
   });
 });
+
+
+// Minigame System
+let currentMinigame = 'pattern'; // 'pattern' or 'shooter'
+let activeShooterGame = null;
+
+// Toggle minigame type
+document.getElementById('minigameToggle').addEventListener('click', () => {
+  currentMinigame = currentMinigame === 'pattern' ? 'shooter' : 'pattern';
+  const btn = document.getElementById('minigameToggle');
+  btn.textContent = `MINIGAME: ${currentMinigame.toUpperCase()}`;
+  
+  if (window.audio) window.audio.playButtonClick();
+  
+  addLog(`> MINIGAME MODE: ${currentMinigame.toUpperCase()}`, 'success');
+});
+
+// Modified startHackSequence to support both minigames
+const originalStartHackSequence = startHackSequence;
+startHackSequence = function(index, nodeElement) {
+  if (currentMinigame === 'shooter') {
+    startShooterMinigame(index, nodeElement);
+  } else {
+    originalStartHackSequence(index, nodeElement);
+  }
+};
+
+// Space Shooter Minigame Integration
+function startShooterMinigame(index, nodeElement) {
+  hackSequence.pendingNode = index;
+  hackSequence.pendingElement = nodeElement;
+  hackSequence.difficulty = Math.min(3 + Math.floor(gameState.combo / 3), 7);
+  
+  const shooterModal = document.getElementById('shooterModal');
+  const shooterGame = document.getElementById('shooterGame');
+  
+  shooterModal.classList.add('show');
+  addLog(`> INITIATING SPACE COMBAT - DIFFICULTY ${hackSequence.difficulty}`, 'warning');
+  
+  // Create shooter instance
+  activeShooterGame = new SpaceShooterMinigame(hackSequence.difficulty);
+  
+  // Set up callbacks
+  activeShooterGame.onComplete = (score) => {
+    shooterModal.classList.remove('show');
+    shooterGame.innerHTML = '';
+    completeHackSequence();
+  };
+  
+  activeShooterGame.onFail = () => {
+    shooterModal.classList.remove('show');
+    shooterGame.innerHTML = '';
+    failHackSequence();
+  };
+  
+  // Initialize game
+  activeShooterGame.init(shooterGame);
+  
+  // Update HUD
+  updateShooterHUD();
+  const hudInterval = setInterval(() => {
+    if (!activeShooterGame || !activeShooterGame.isRunning) {
+      clearInterval(hudInterval);
+      return;
+    }
+    updateShooterHUD();
+  }, 100);
+}
+
+function updateShooterHUD() {
+  if (!activeShooterGame) return;
+  
+  document.getElementById('shooterEnemies').textContent = 
+    `${activeShooterGame.enemiesDestroyed} / ${activeShooterGame.targetEnemies}`;
+  
+  document.getElementById('shooterScore').textContent = activeShooterGame.score;
+  
+  const healthBar = document.getElementById('shooterHealth');
+  healthBar.style.width = `${activeShooterGame.health}%`;
+}

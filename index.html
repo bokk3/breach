@@ -119,6 +119,7 @@
       <button id="startBtn">INITIATE BREACH</button>
       <button class="reset" id="resetBtn">RESET NETWORK</button>
       <button class="stats-btn" id="statsBtn">VIEW STATS</button>
+      <button class="minigame-toggle" id="minigameToggle">MINIGAME: PATTERN</button>
     </div>
   </div>
 
@@ -137,6 +138,32 @@
       <div class="hack-input-grid" id="hackInputGrid"></div>
       
       <div class="hack-progress" id="hackProgress">0 / 0</div>
+    </div>
+  </div>
+
+  <!-- Space Shooter Modal -->
+  <div class="hack-modal" id="shooterModal">
+    <div class="shooter-container">
+      <div class="shooter-hud">
+        <div class="shooter-stat">
+          <div class="shooter-label">ENEMIES</div>
+          <div class="shooter-value" id="shooterEnemies">0 / 0</div>
+        </div>
+        <div class="shooter-stat">
+          <div class="shooter-label">HEALTH</div>
+          <div class="shooter-health-bar">
+            <div class="shooter-health-fill" id="shooterHealth"></div>
+          </div>
+        </div>
+        <div class="shooter-stat">
+          <div class="shooter-label">SCORE</div>
+          <div class="shooter-value" id="shooterScore">0</div>
+        </div>
+      </div>
+      <div id="shooterGame" class="shooter-game"></div>
+      <div class="shooter-controls">
+        <div>WASD/Arrows: Move • Space/Click: Shoot</div>
+      </div>
     </div>
   </div>
 
@@ -184,8 +211,12 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
+  <!-- Three.js for 3D minigame -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
   <!-- Game Scripts -->
   <script src="audio.js"></script>
+  <script src="spaceshooter-minigame.js"></script>
   <script src="auth.js"></script>
   <script src="game.js"></script>
 </body>
