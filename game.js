@@ -3,6 +3,15 @@ const GRID_SIZE = 48;
 const FIREWALL_COUNT = 8;
 const SYMBOLS = ['◆', '▲', '●', '■', '★', '✦', '◈', '◉'];
 
+// Defense System Configuration
+const DEFENSE_SYSTEM = {
+  enabled: true,
+  conversionInterval: 15000, // Convert a node every 15 seconds
+  warningTime: 5000, // Show warning 5 seconds before conversion
+  maxDefenses: 20, // Maximum number of nodes that can become firewalls
+  spreadFromHacked: true // Defenses spread from hacked nodes
+};
+
 // XP Curve Configuration
 const XP_CURVE = {
   baseXP: 100,
@@ -110,13 +119,17 @@ let gameState = {
   sessionXP: 0,
   timeStarted: null,
   timerInterval: null,
+  defenseTimer: null,
   activeNode: null,
+  starterNode: null,
   hackedNodes: new Set(),
   firewallNodes: new Set(),
   valuableNodes: new Set(),
+  threatenedNodes: new Set(), // Nodes about to become firewalls
   gameStarted: false,
   combo: 0,
-  maxCombo: 0
+  maxCombo: 0,
+  defensesCreated: 0
 };
 
 let hackSequence = {
@@ -169,15 +182,25 @@ function initGrid() {
   gameState.hackedNodes.clear();
   gameState.firewallNodes.clear();
   gameState.valuableNodes.clear();
+  gameState.threatenedNodes.clear();
+  
+  // Select starter node (center-ish area for better gameplay)
+  const centerStart = Math.floor(GRID_SIZE / 2) - 4;
+  const centerEnd = Math.floor(GRID_SIZE / 2) + 4;
+  gameState.starterNode = centerStart + Math.floor(Math.random() * (centerEnd - centerStart));
   
   while (gameState.firewallNodes.size < FIREWALL_COUNT) {
-    gameState.firewallNodes.add(Math.floor(Math.random() * GRID_SIZE));
+    const index = Math.floor(Math.random() * GRID_SIZE);
+    // Don't place firewalls on or adjacent to starter node
+    if (index !== gameState.starterNode && !isAdjacentTo(index, gameState.starterNode)) {
+      gameState.firewallNodes.add(index);
+    }
   }
 
   const valuableCount = 6;
   while (gameState.valuableNodes.size < valuableCount) {
     const index = Math.floor(Math.random() * GRID_SIZE);
-    if (!gameState.firewallNodes.has(index)) {
+    if (!gameState.firewallNodes.has(index) && index !== gameState.starterNode) {
       gameState.valuableNodes.add(index);
     }
   }
@@ -197,16 +220,20 @@ function initGrid() {
     const pulse = document.createElement('div');
     pulse.className = 'node-pulse';
     
-    if (gameState.firewallNodes.has(i)) {
+    if (i === gameState.starterNode) {
+      node.classList.add('starter');
+      const icon = document.createElement('div');
+      icon.className = 'node-icon';
+      icon.textContent = '⚡';
+      inner.appendChild(icon);
+    } else if (gameState.firewallNodes.has(i)) {
       node.classList.add('firewall');
-      // Add firewall icon
       const icon = document.createElement('div');
       icon.className = 'node-icon';
       icon.textContent = '⚠';
       inner.appendChild(icon);
     } else if (gameState.valuableNodes.has(i)) {
       node.classList.add('type-valuable');
-      // Add valuable icon
       const icon = document.createElement('div');
       icon.className = 'node-icon';
       icon.textContent = '◆';
@@ -250,10 +277,38 @@ function initGrid() {
   }
 }
 
+// Check if two nodes are adjacent
+function isAdjacentTo(index1, index2) {
+  const cols = 8;
+  const row1 = Math.floor(index1 / cols);
+  const col1 = index1 % cols;
+  const row2 = Math.floor(index2 / cols);
+  const col2 = index2 % cols;
+  
+  const rowDiff = Math.abs(row1 - row2);
+  const colDiff = Math.abs(col1 - col2);
+  
+  return (rowDiff <= 1 && colDiff <= 1) && (index1 !== index2);
+}
+
 // Handle node click
 function handleNodeClick(index, nodeElement) {
   if (!gameState.gameStarted) {
     addLog('> BREACH NOT INITIATED. START THE GAME FIRST.', 'error');
+    return;
+  }
+
+  // Starter node - must be clicked first
+  if (gameState.activeNode === null && index !== gameState.starterNode) {
+    addLog('> ACCESS DENIED. BEGIN AT ENTRY POINT (⚡)', 'error');
+    if (window.audio) window.audio.playError();
+    
+    // Flash the starter node
+    const starterElement = document.querySelector(`[data-index="${gameState.starterNode}"]`);
+    if (starterElement) {
+      starterElement.classList.add('flash-hint');
+      setTimeout(() => starterElement.classList.remove('flash-hint'), 1000);
+    }
     return;
   }
 
@@ -511,6 +566,125 @@ function getAdjacentNodes(index) {
   return adjacent;
 }
 
+// Defense System Functions
+function startDefenseSystem() {
+  if (!DEFENSE_SYSTEM.enabled) return;
+  
+  gameState.defensesCreated = 0;
+  
+  // Start the defense timer
+  gameState.defenseTimer = setInterval(() => {
+    if (gameState.defensesCreated >= DEFENSE_SYSTEM.maxDefenses) {
+      addLog('> MAXIMUM NETWORK DEFENSES DEPLOYED', 'warning');
+      clearInterval(gameState.defenseTimer);
+      return;
+    }
+    
+    // Select a node to threaten
+    const targetNode = selectNodeForDefense();
+    if (targetNode !== null) {
+      threatenNode(targetNode);
+      
+      // After warning time, convert to firewall
+      setTimeout(() => {
+        convertToFirewall(targetNode);
+      }, DEFENSE_SYSTEM.warningTime);
+    }
+  }, DEFENSE_SYSTEM.conversionInterval);
+  
+  addLog('> WARNING: NETWORK DEFENSE SYSTEM ACTIVATED', 'error');
+  addLog('> NODES WILL DEVELOP FIREWALLS OVER TIME', 'warning');
+}
+
+function selectNodeForDefense() {
+  // Find nodes that can become firewalls
+  const candidates = [];
+  
+  for (let i = 0; i < GRID_SIZE; i++) {
+    // Skip if already firewall, hacked, threatened, starter, or valuable
+    if (gameState.firewallNodes.has(i) || 
+        gameState.hackedNodes.has(i) || 
+        gameState.threatenedNodes.has(i) ||
+        i === gameState.starterNode ||
+        gameState.valuableNodes.has(i)) {
+      continue;
+    }
+    
+    // Prefer nodes adjacent to hacked nodes (spreading defense)
+    if (DEFENSE_SYSTEM.spreadFromHacked && gameState.hackedNodes.size > 0) {
+      const adjacentToHacked = Array.from(gameState.hackedNodes).some(hackedIndex => {
+        return isAdjacentTo(i, hackedIndex);
+      });
+      
+      if (adjacentToHacked) {
+        candidates.push({ index: i, priority: 2 });
+      } else {
+        candidates.push({ index: i, priority: 1 });
+      }
+    } else {
+      candidates.push({ index: i, priority: 1 });
+    }
+  }
+  
+  if (candidates.length === 0) return null;
+  
+  // Sort by priority and pick from top candidates
+  candidates.sort((a, b) => b.priority - a.priority);
+  const topPriority = candidates[0].priority;
+  const topCandidates = candidates.filter(c => c.priority === topPriority);
+  
+  return topCandidates[Math.floor(Math.random() * topCandidates.length)].index;
+}
+
+function threatenNode(index) {
+  gameState.threatenedNodes.add(index);
+  const nodeElement = document.querySelector(`[data-index="${index}"]`);
+  
+  if (nodeElement) {
+    nodeElement.classList.add('threatened');
+    addLog(`> NODE ${index} DEVELOPING FIREWALL DEFENSES...`, 'warning');
+    
+    if (window.audio) window.audio.playDefenseWarning();
+  }
+}
+
+function convertToFirewall(index) {
+  // Check if node was hacked in the meantime
+  if (gameState.hackedNodes.has(index)) {
+    gameState.threatenedNodes.delete(index);
+    const nodeElement = document.querySelector(`[data-index="${index}"]`);
+    if (nodeElement) {
+      nodeElement.classList.remove('threatened');
+    }
+    addLog(`> NODE ${index} SECURED BEFORE FIREWALL DEPLOYMENT`, 'success');
+    return;
+  }
+  
+  gameState.threatenedNodes.delete(index);
+  gameState.firewallNodes.add(index);
+  gameState.defensesCreated++;
+  
+  const nodeElement = document.querySelector(`[data-index="${index}"]`);
+  if (nodeElement) {
+    // Remove old classes
+    nodeElement.classList.remove('threatened', 'type-secure', 'type-data', 'type-network', 'type-standard');
+    nodeElement.classList.add('firewall');
+    
+    // Update icon
+    const iconElement = nodeElement.querySelector('.node-icon');
+    if (iconElement) {
+      iconElement.textContent = '⚠';
+    }
+    
+    // Visual effect
+    createParticles(nodeElement, '#ffff00');
+    
+    addLog(`> FIREWALL DEPLOYED AT NODE ${index}!`, 'error');
+    
+    if (window.audio) window.audio.playDefenseActivated();
+  }
+}
+
 function updateProgress() {
   const percentage = Math.round((gameState.hackedNodes.size / (GRID_SIZE - FIREWALL_COUNT)) * 100);
   progressBar.style.width = percentage + '%';
@@ -586,6 +760,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
   gameState.activeNode = null;
   gameState.combo = 0;
   gameState.maxCombo = 0;
+  gameState.defensesCreated = 0;
   
   scoreEl.textContent = '0';
   movesEl.textContent = '0';
@@ -593,7 +768,10 @@ document.getElementById('startBtn').addEventListener('click', () => {
   
   initGrid();
   startTimer();
+  startDefenseSystem();
+  
   addLog('> BREACH INITIATED', 'success');
+  addLog(`> ENTRY POINT: NODE ${gameState.starterNode} (⚡)`, 'success');
   addLog('> COMPLETE HACK SEQUENCES TO INFILTRATE NODES', 'warning');
   addLog('> BUILD COMBOS AND LEVEL UP FOR MASSIVE REWARDS!', 'warning');
   
@@ -602,6 +780,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 
 function resetGame() {
   if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+  if (gameState.defenseTimer) clearInterval(gameState.defenseTimer);
   if (hackSequence.timerInterval) clearInterval(hackSequence.timerInterval);
   
   hackModal.classList.remove('show');
@@ -612,13 +791,17 @@ function resetGame() {
     sessionXP: 0,
     timeStarted: null,
     timerInterval: null,
+    defenseTimer: null,
     activeNode: null,
+    starterNode: null,
     hackedNodes: new Set(),
     firewallNodes: new Set(),
     valuableNodes: new Set(),
+    threatenedNodes: new Set(),
     gameStarted: false,
     combo: 0,
-    maxCombo: 0
+    maxCombo: 0,
+    defensesCreated: 0
   };
   
   hackSequence = {

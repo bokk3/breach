@@ -1,0 +1,28 @@
+{
+  "name": "cyber-breach",
+  "version": "1.0.0",
+  "description": "Infiltrate the network. Hack the nodes. Level up.",
+  "main": "index.html",
+  "scripts": {
+    "android:setup": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:copy": "npx cap copy android",
+    "android:open": "npx cap open android",
+    "android:build": "npx cap copy android && npx cap open android"
+  },
+  "keywords": [
+    "game",
+    "cyberpunk",
+    "hacking",
+    "puzzle"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^5.5.1",
+    "@capacitor/core": "^5.5.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.5.1"
+  }
+}

@@ -385,6 +385,75 @@ class AudioSystem {
     osc.stop(now + 0.15);
   }
 
+  // Defense warning sound (node about to become firewall)
+  playDefenseWarning() {
+    if (!this.enabled || !this.initialized) return;
+
+    const now = this.context.currentTime;
+    const { osc, gain } = this.createOscillator('triangle', 400, 0.5, 0.2);
+    
+    // Pulsing warning sound
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.setValueAtTime(500, now + 0.1);
+    osc.frequency.setValueAtTime(400, now + 0.2);
+    osc.frequency.setValueAtTime(500, now + 0.3);
+    osc.frequency.setValueAtTime(400, now + 0.4);
+    
+    gain.gain.setValueAtTime(0.2 * this.volume, now);
+    gain.gain.setValueAtTime(0.1 * this.volume, now + 0.1);
+    gain.gain.setValueAtTime(0.2 * this.volume, now + 0.2);
+    gain.gain.setValueAtTime(0.1 * this.volume, now + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    
+    osc.start(now);
+    osc.stop(now + 0.5);
+  }
+
+  // Defense activated sound (firewall deployed)
+  playDefenseActivated() {
+    if (!this.enabled || !this.initialized) return;
+
+    const now = this.context.currentTime;
+    
+    // Two-tone alarm
+    const { osc: osc1, gain: gain1 } = this.createOscillator('square', 600, 0.4, 0.25);
+    const { osc: osc2, gain: gain2 } = this.createOscillator('square', 800, 0.4, 0.25);
+    
+    osc1.frequency.setValueAtTime(600, now);
+    osc1.frequency.setValueAtTime(800, now + 0.2);
+    
+    osc2.frequency.setValueAtTime(800, now);
+    osc2.frequency.setValueAtTime(600, now + 0.2);
+    
+    gain1.gain.setValueAtTime(0.25 * this.volume, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    
+    gain2.gain.setValueAtTime(0.25 * this.volume, now);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    
+    osc1.start(now);
+    osc1.stop(now + 0.4);
+    osc2.start(now);
+    osc2.stop(now + 0.4);
+  }
+
+  // Error sound (for starter node requirement)
+  playError() {
+    if (!this.enabled || !this.initialized) return;
+
+    const now = this.context.currentTime;
+    const { osc, gain } = this.createOscillator('sawtooth', 200, 0.3, 0.3);
+    
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+    
+    gain.gain.setValueAtTime(0.3 * this.volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }
+
   // Set volume (0-1)
   setVolume(vol) {
     this.volume = Math.max(0, Math.min(1, vol));

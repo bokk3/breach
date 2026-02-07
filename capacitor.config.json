@@ -1,0 +1,23 @@
+{
+  "appId": "com.cyberbreach.game",
+  "appName": "Cyber Breach",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0a0015"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0a0015",
+      "showSpinner": false,
+      "androidSpinnerStyle": "small",
+      "spinnerColor": "#00ffff"
+    }
+  }
+}
