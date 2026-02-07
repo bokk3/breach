@@ -20,7 +20,7 @@ class SpaceShooterMinigame {
     this.score = 0;
     this.health = 100;
     this.enemiesDestroyed = 0;
-    this.targetEnemies = 5 + (difficulty * 2); // More enemies for higher difficulty
+    this.targetEnemies = 3 + difficulty; // Reduced from 5 + (difficulty * 2)
     this.animationId = null;
     this.isRunning = false;
     this.onComplete = null;
@@ -59,6 +59,19 @@ class SpaceShooterMinigame {
     this.player = new THREE.Mesh(playerGeometry, playerMaterial);
     this.player.rotation.x = Math.PI / 2;
     this.scene.add(this.player);
+
+    // Add targeting line to show where bullets will go
+    const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, -30)
+    ]);
+    const lineMaterial = new THREE.LineBasicMaterial({ 
+      color: 0x00ffff,
+      transparent: true,
+      opacity: 0.3
+    });
+    this.targetLine = new THREE.Line(lineGeometry, lineMaterial);
+    this.player.add(this.targetLine);
 
     // Create starfield
     const starGeometry = new THREE.BufferGeometry();
@@ -116,14 +129,30 @@ class SpaceShooterMinigame {
     if (now - this.lastShot < 150) return;
     this.lastShot = now;
 
-    const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    // Create larger, more visible bullet
+    const bulletGeometry = new THREE.SphereGeometry(0.15, 8, 8);
     const bulletMaterial = new THREE.MeshBasicMaterial({ 
       color: 0x00ffff,
-      emissive: 0x00ffff
+      emissive: 0x00ffff,
+      emissiveIntensity: 1
     });
     const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+    
+    // Add glow effect
+    const glowGeometry = new THREE.SphereGeometry(0.25, 8, 8);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ffff,
+      transparent: true,
+      opacity: 0.3
+    });
+    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+    bullet.add(glow);
+    
     bullet.position.copy(this.player.position);
-    bullet.velocity = new THREE.Vector3(0, 0, -1);
+    
+    // Shoot straight forward (negative Z direction)
+    bullet.velocity = new THREE.Vector3(0, 0, -0.5);
+    
     this.scene.add(bullet);
     this.bullets.push(bullet);
 
@@ -131,24 +160,37 @@ class SpaceShooterMinigame {
   }
 
   spawnEnemy() {
-    const enemyGeometry = new THREE.OctahedronGeometry(0.4);
+    // Larger, more visible enemy
+    const enemyGeometry = new THREE.OctahedronGeometry(0.5);
     const enemyMaterial = new THREE.MeshPhongMaterial({ 
       color: 0xff0044,
       emissive: 0xff0044,
-      emissiveIntensity: 0.3
+      emissiveIntensity: 0.5
     });
     const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
     
+    // Add glow to enemy
+    const glowGeometry = new THREE.OctahedronGeometry(0.7);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0xff0044,
+      transparent: true,
+      opacity: 0.2
+    });
+    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+    enemy.add(glow);
+    
+    // Spawn enemies at same Y level as player, far away on Z axis
     enemy.position.set(
-      (Math.random() - 0.5) * 10,
-      (Math.random() - 0.5) * 5,
-      -20
+      (Math.random() - 0.5) * 10,  // Random X position
+      (Math.random() - 0.5) * 6,   // Random Y position (similar range to player)
+      -20                           // Far away on Z axis
     );
     
+    // Move toward player (positive Z direction) - slower speed
     enemy.velocity = new THREE.Vector3(
-      (Math.random() - 0.5) * 0.02,
-      (Math.random() - 0.5) * 0.02,
-      0.03 + (this.difficulty * 0.01)
+      (Math.random() - 0.5) * 0.005,  // Reduced X drift
+      (Math.random() - 0.5) * 0.005,  // Reduced Y drift
+      0.05 + (this.difficulty * 0.005) // Slower approach speed
     );
     
     enemy.health = 1;
@@ -240,12 +282,21 @@ class SpaceShooterMinigame {
     // Check bullet-enemy collisions
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const bullet = this.bullets[i];
+      let bulletHit = false;
+      
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const enemy = this.enemies[j];
-        if (bullet.position.distanceTo(enemy.position) < 0.5) {
+        
+        // More forgiving collision detection
+        // Check if bullet is near enemy in 3D space
+        const distance = bullet.position.distanceTo(enemy.position);
+        
+        // Larger collision radius for better gameplay
+        if (distance < 0.8) {
           enemy.health--;
           this.scene.remove(bullet);
           this.bullets.splice(i, 1);
+          bulletHit = true;
           
           if (enemy.health <= 0) {
             this.createExplosion(enemy.position, 0xff0044);
@@ -265,6 +316,8 @@ class SpaceShooterMinigame {
           break;
         }
       }
+      
+      if (bulletHit) break;
     }
 
     // Update particles
