@@ -245,6 +245,98 @@ class AudioSystem {
     osc.stop(now + 0.03);
   }
 
+  // Space shooter laser sound
+  playLaser() {
+    if (!this.enabled || !this.initialized) return;
+
+    const now = this.context.currentTime;
+    const { osc, gain } = this.createOscillator('sawtooth', 800, 0.08, 0.15);
+    
+    // Frequency sweep down for laser effect
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.08);
+    
+    gain.gain.setValueAtTime(0.15 * this.volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+    
+    osc.start(now);
+    osc.stop(now + 0.08);
+  }
+
+  // Space shooter explosion
+  playExplosion() {
+    if (!this.enabled || !this.initialized) return;
+
+    const now = this.context.currentTime;
+    
+    // Create noise-like explosion with multiple oscillators
+    const osc1 = this.context.createOscillator();
+    const osc2 = this.context.createOscillator();
+    const osc3 = this.context.createOscillator();
+    const gain = this.context.createGain();
+    
+    osc1.type = 'sawtooth';
+    osc2.type = 'square';
+    osc3.type = 'triangle';
+    
+    osc1.frequency.value = 100;
+    osc2.frequency.value = 150;
+    osc3.frequency.value = 200;
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    osc3.connect(gain);
+    gain.connect(this.masterGain);
+    
+    // Explosive envelope
+    gain.gain.setValueAtTime(0.4 * this.volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    
+    // Frequency sweep down
+    osc1.frequency.exponentialRampToValueAtTime(50, now + 0.3);
+    osc2.frequency.exponentialRampToValueAtTime(75, now + 0.3);
+    osc3.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+    
+    osc1.start(now);
+    osc2.start(now);
+    osc3.start(now);
+    osc1.stop(now + 0.3);
+    osc2.stop(now + 0.3);
+    osc3.stop(now + 0.3);
+  }
+
+  // Space shooter hit sound
+  playHit() {
+    if (!this.enabled || !this.initialized) return;
+
+    const now = this.context.currentTime;
+    const { osc, gain } = this.createOscillator('square', 600, 0.05, 0.2);
+    
+    gain.gain.setValueAtTime(0.2 * this.volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+    
+    osc.start(now);
+    osc.stop(now + 0.05);
+  }
+
+  // Space shooter damage taken
+  playDamage() {
+    if (!this.enabled || !this.initialized) return;
+
+    const now = this.context.currentTime;
+    const { osc, gain } = this.createOscillator('sawtooth', 200, 0.2, 0.3);
+    
+    // Harsh damage sound
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+    
+    gain.gain.setValueAtTime(0.3 * this.volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    
+    osc.start(now);
+    osc.stop(now + 0.2);
+  }
+
   // Pattern symbol appear sound
   playSymbolAppear() {
     if (!this.enabled || !this.initialized) return;

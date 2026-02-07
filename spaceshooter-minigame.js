@@ -93,11 +93,15 @@ class SpaceShooterMinigame {
     this.handleKeyUp = this.handleKeyUp.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleClick = this.handleClick.bind(this);
+    this.handleMouseDown = this.handleMouseDown.bind(this);
+    this.handleMouseUp = this.handleMouseUp.bind(this);
 
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
     window.addEventListener('mousemove', this.handleMouseMove);
     window.addEventListener('click', this.handleClick);
+    window.addEventListener('mousedown', this.handleMouseDown);
+    window.addEventListener('mouseup', this.handleMouseUp);
 
     this.isRunning = true;
     this.animate();
@@ -107,7 +111,7 @@ class SpaceShooterMinigame {
     this.keys[e.key.toLowerCase()] = true;
     if (e.key === ' ' || e.key === 'Spacebar') {
       e.preventDefault();
-      this.shootBullet();
+      // Don't shoot on keydown, let the animation loop handle it
     }
   }
 
@@ -121,7 +125,16 @@ class SpaceShooterMinigame {
   }
 
   handleClick() {
+    // Single shot on click
     this.shootBullet();
+  }
+
+  handleMouseDown(e) {
+    this.keys['mousedown'] = true;
+  }
+
+  handleMouseUp(e) {
+    this.keys['mousedown'] = false;
   }
 
   shootBullet() {
@@ -156,7 +169,8 @@ class SpaceShooterMinigame {
     this.scene.add(bullet);
     this.bullets.push(bullet);
 
-    if (window.audio) window.audio.playNodeClick();
+    // Play laser sound
+    if (window.audio) window.audio.playLaser();
   }
 
   spawnEnemy() {
@@ -239,6 +253,11 @@ class SpaceShooterMinigame {
     // Player look at mouse
     this.player.rotation.z = -this.mouseX * 0.3;
 
+    // Rapid fire when holding spacebar or mouse button
+    if (this.keys[' '] || this.keys['spacebar'] || this.keys['mousedown']) {
+      this.shootBullet();
+    }
+
     // Spawn enemies
     const now = Date.now();
     const spawnRate = Math.max(500, 2000 - (this.difficulty * 200));
@@ -270,7 +289,9 @@ class SpaceShooterMinigame {
         this.scene.remove(enemy);
         this.enemies.splice(i, 1);
         this.health -= 20;
-        if (window.audio) window.audio.playFirewallHit();
+        
+        // Play damage sound
+        if (window.audio) window.audio.playDamage();
         
         if (this.health <= 0) {
           this.fail();
@@ -305,13 +326,17 @@ class SpaceShooterMinigame {
             this.score += 10;
             this.enemiesDestroyed++;
             
-            if (window.audio) window.audio.playCorrectInput();
+            // Play explosion sound
+            if (window.audio) window.audio.playExplosion();
             
             // Check win condition
             if (this.enemiesDestroyed >= this.targetEnemies) {
               this.complete();
               return;
             }
+          } else {
+            // Play hit sound (enemy damaged but not destroyed)
+            if (window.audio) window.audio.playHit();
           }
           break;
         }
@@ -339,7 +364,10 @@ class SpaceShooterMinigame {
 
   complete() {
     this.isRunning = false;
-    if (window.audio) window.audio.playHackSuccess();
+    
+    // Play victory sound
+    if (window.audio) window.audio.playVictory();
+    
     if (this.onComplete) {
       this.onComplete(this.score);
     }
@@ -348,7 +376,10 @@ class SpaceShooterMinigame {
 
   fail() {
     this.isRunning = false;
+    
+    // Play fail sound
     if (window.audio) window.audio.playHackFail();
+    
     if (this.onFail) {
       this.onFail();
     }
@@ -364,6 +395,8 @@ class SpaceShooterMinigame {
     window.removeEventListener('keyup', this.handleKeyUp);
     window.removeEventListener('mousemove', this.handleMouseMove);
     window.removeEventListener('click', this.handleClick);
+    window.removeEventListener('mousedown', this.handleMouseDown);
+    window.removeEventListener('mouseup', this.handleMouseUp);
 
     if (this.renderer) {
       this.renderer.dispose();

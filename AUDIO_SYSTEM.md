@@ -20,6 +20,10 @@ The game now includes a complete audio system with synthetic cyberpunk-themed so
 10. **Symbol Appear** - Tone for each pattern symbol
 11. **Correct Input** - Positive feedback
 12. **Wrong Input** - Negative feedback
+13. **Laser Shot** - Space shooter weapon fire
+14. **Explosion** - Space shooter enemy destroyed
+15. **Hit** - Space shooter bullet hit
+16. **Damage** - Space shooter player damage taken
 
 ### 🎛️ Audio Controls
 
@@ -104,6 +108,12 @@ audio.playCorrectInput()     // Correct input
 audio.playWrongInput()       // Wrong input
 audio.playTimerTick()        // Timer tick (optional)
 audio.playAmbientHum()       // Background hum (optional)
+
+// Space Shooter sounds
+audio.playLaser()            // Laser weapon fire
+audio.playExplosion()        // Enemy destroyed
+audio.playHit()              // Bullet hit enemy
+audio.playDamage()           // Player took damage
 
 // Control methods
 audio.setVolume(0.5)         // Set volume (0-1)
