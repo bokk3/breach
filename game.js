@@ -163,7 +163,7 @@ function updateProfileUI() {
   globalXPBarText.textContent = `Level ${profile.level} - ${profile.currentLevelXP} / ${xpNeeded} XP`;
 }
 
-// Initialize grid
+// Initialize grid with procedural generation
 function initGrid() {
   grid.innerHTML = '';
   gameState.hackedNodes.clear();
@@ -187,13 +187,63 @@ function initGrid() {
     node.className = 'node';
     node.dataset.index = i;
     
+    // Add inner elements for decoration
+    const inner = document.createElement('div');
+    inner.className = 'node-inner';
+    
+    const core = document.createElement('div');
+    core.className = 'node-core';
+    
+    const pulse = document.createElement('div');
+    pulse.className = 'node-pulse';
+    
     if (gameState.firewallNodes.has(i)) {
       node.classList.add('firewall');
+      // Add firewall icon
+      const icon = document.createElement('div');
+      icon.className = 'node-icon';
+      icon.textContent = '⚠';
+      inner.appendChild(icon);
     } else if (gameState.valuableNodes.has(i)) {
       node.classList.add('type-valuable');
-    } else if (Math.random() < 0.3) {
-      node.classList.add('type-secure');
+      // Add valuable icon
+      const icon = document.createElement('div');
+      icon.className = 'node-icon';
+      icon.textContent = '◆';
+      inner.appendChild(icon);
+    } else {
+      // Random node types for variety
+      const rand = Math.random();
+      if (rand < 0.2) {
+        node.classList.add('type-secure');
+        const icon = document.createElement('div');
+        icon.className = 'node-icon';
+        icon.textContent = '●';
+        inner.appendChild(icon);
+      } else if (rand < 0.4) {
+        node.classList.add('type-data');
+        const icon = document.createElement('div');
+        icon.className = 'node-icon';
+        icon.textContent = '■';
+        inner.appendChild(icon);
+      } else if (rand < 0.6) {
+        node.classList.add('type-network');
+        const icon = document.createElement('div');
+        icon.className = 'node-icon';
+        icon.textContent = '▲';
+        inner.appendChild(icon);
+      } else {
+        node.classList.add('type-standard');
+        const icon = document.createElement('div');
+        icon.className = 'node-icon';
+        icon.textContent = '○';
+        inner.appendChild(icon);
+      }
     }
+    
+    inner.appendChild(core);
+    inner.appendChild(pulse);
+    node.appendChild(inner);
     
     node.addEventListener('click', () => handleNodeClick(i, node));
     grid.appendChild(node);
