@@ -362,8 +362,205 @@ function initGrid() {
     node.appendChild(inner);
     
     node.addEventListener('click', () => handleNodeClick(i, node));
+    
+    // Add hover tooltip
+    node.addEventListener('mouseenter', (e) => showNodeTooltip(i, node, e));
+    node.addEventListener('mouseleave', () => hideNodeTooltip());
+    
+    // Mobile: show tooltip on tap
+    node.addEventListener('touchstart', (e) => {
+      if (!gameState.gameStarted) return;
+      e.preventDefault();
+      showNodeTooltip(i, node, e.touches[0]);
+    });
+    
     grid.appendChild(node);
   }
+}
+
+// Tooltip System
+let tooltipElement = null;
+let tooltipTimeout = null;
+
+function showNodeTooltip(index, nodeElement, event) {
+  // Clear any existing tooltip timeout
+  if (tooltipTimeout) {
+    clearTimeout(tooltipTimeout);
+    tooltipTimeout = null;
+  }
+  
+  // Don't show tooltip if game hasn't started
+  if (!gameState.gameStarted) return;
+  
+  // Create tooltip if it doesn't exist
+  if (!tooltipElement) {
+    tooltipElement = document.createElement('div');
+    tooltipElement.className = 'node-tooltip';
+    document.body.appendChild(tooltipElement);
+  }
+  
+  // Gather node information
+  const nodeInfo = getNodeInfo(index);
+  
+  // Build tooltip content
+  let content = `<div class="tooltip-header">${nodeInfo.icon} NODE ${index}</div>`;
+  content += `<div class="tooltip-section">`;
+  content += `<div class="tooltip-label">Type:</div>`;
+  content += `<div class="tooltip-value">${nodeInfo.type}</div>`;
+  content += `</div>`;
+  
+  content += `<div class="tooltip-section">`;
+  content += `<div class="tooltip-label">Status:</div>`;
+  content += `<div class="tooltip-value ${nodeInfo.statusClass}">${nodeInfo.status}</div>`;
+  content += `</div>`;
+  
+  if (nodeInfo.rewards) {
+    content += `<div class="tooltip-section">`;
+    content += `<div class="tooltip-label">Rewards:</div>`;
+    content += `<div class="tooltip-value tooltip-rewards">${nodeInfo.rewards}</div>`;
+    content += `</div>`;
+  }
+  
+  if (nodeInfo.powerUp) {
+    content += `<div class="tooltip-section tooltip-powerup">`;
+    content += `<div class="tooltip-label">Power-Up:</div>`;
+    content += `<div class="tooltip-value">${nodeInfo.powerUp}</div>`;
+    content += `</div>`;
+  }
+  
+  if (gameState.gameStarted && !gameState.hackedNodes.has(index)) {
+    content += `<div class="tooltip-section">`;
+    content += `<div class="tooltip-label">Difficulty:</div>`;
+    content += `<div class="tooltip-value">Level ${gameState.currentDifficulty}</div>`;
+    content += `</div>`;
+  }
+  
+  tooltipElement.innerHTML = content;
+  
+  // Position tooltip near cursor/touch
+  const x = event.clientX || event.pageX;
+  const y = event.clientY || event.pageY;
+  
+  // Show tooltip
+  tooltipElement.classList.add('show');
+  
+  // Position with offset to avoid covering cursor
+  const offsetX = 15;
+  const offsetY = 15;
+  
+  // Check if tooltip would go off screen
+  const tooltipRect = tooltipElement.getBoundingClientRect();
+  let left = x + offsetX;
+  let top = y + offsetY;
+  
+  // Adjust if going off right edge
+  if (left + tooltipRect.width > window.innerWidth) {
+    left = x - tooltipRect.width - offsetX;
+  }
+  
+  // Adjust if going off bottom edge
+  if (top + tooltipRect.height > window.innerHeight) {
+    top = y - tooltipRect.height - offsetY;
+  }
+  
+  tooltipElement.style.left = left + 'px';
+  tooltipElement.style.top = top + 'px';
+}
+
+function hideNodeTooltip() {
+  if (!tooltipElement) return;
+  
+  // Delay hiding on mobile to allow reading
+  tooltipTimeout = setTimeout(() => {
+    if (tooltipElement) {
+      tooltipElement.classList.remove('show');
+    }
+  }, 100);
+}
+
+function getNodeInfo(index) {
+  const info = {
+    icon: '○',
+    type: 'Standard',
+    status: 'Available',
+    statusClass: '',
+    rewards: null,
+    powerUp: null
+  };
+  
+  // Determine node type and icon
+  if (index === gameState.starterNode) {
+    info.icon = '⚡';
+    info.type = 'Entry Point';
+  } else if (gameState.firewallNodes.has(index)) {
+    info.icon = '⚠';
+    info.type = 'Firewall';
+  } else if (gameState.valuableNodes.has(index)) {
+    info.icon = '◆';
+    info.type = 'Valuable Data';
+  } else {
+    // Check node element for type
+    const nodeElement = document.querySelector(`[data-index="${index}"]`);
+    if (nodeElement) {
+      if (nodeElement.classList.contains('type-secure')) {
+        info.icon = '●';
+        info.type = 'Secure Node';
+      } else if (nodeElement.classList.contains('type-data')) {
+        info.icon = '■';
+        info.type = 'Data Node';
+      } else if (nodeElement.classList.contains('type-network')) {
+        info.icon = '▲';
+        info.type = 'Network Node';
+      }
+    }
+  }
+  
+  // Determine status
+  if (gameState.hackedNodes.has(index)) {
+    info.status = 'BREACHED';
+    info.statusClass = 'status-hacked';
+  } else if (gameState.firewallNodes.has(index)) {
+    info.status = 'PROTECTED';
+    info.statusClass = 'status-firewall';
+  } else if (gameState.threatenedNodes.has(index)) {
+    info.status = 'THREAT DETECTED';
+    info.statusClass = 'status-threatened';
+  } else if (gameState.activeNode !== null && isAdjacentTo(index, gameState.activeNode)) {
+    info.status = 'IN RANGE';
+    info.statusClass = 'status-inrange';
+  } else if (index === gameState.starterNode && gameState.activeNode === null) {
+    info.status = 'START HERE';
+    info.statusClass = 'status-starter';
+  }
+  
+  // Calculate rewards (if not hacked)
+  if (!gameState.hackedNodes.has(index) && !gameState.firewallNodes.has(index)) {
+    let baseXP = 25;
+    let basePoints = 100;
+    
+    if (gameState.valuableNodes.has(index)) {
+      baseXP *= 2;
+      basePoints *= 1.5;
+    }
+    
+    const comboMultiplier = 1 + (gameState.combo) * 0.5;
+    const xp = Math.floor(baseXP * comboMultiplier);
+    const points = Math.floor(basePoints * comboMultiplier);
+    
+    info.rewards = `+${points} pts, +${xp} XP`;
+    
+    if (gameState.activePowerUps.has('double_xp')) {
+      info.rewards += ' (2x XP active!)';
+    }
+  }
+  
+  // Check for power-up
+  if (gameState.powerUpNodes.has(index)) {
+    const powerUp = gameState.powerUpNodes.get(index);
+    info.powerUp = `${powerUp.icon} ${powerUp.name}`;
+  }
+  
+  return info;
 }
 
 // Check if two nodes are adjacent
@@ -1282,6 +1479,13 @@ document.getElementById('closeStatsBtn').addEventListener('click', () => {
 // Initialize on load
 updateProfileUI();
 initGrid();
+
+// Hide tooltip when clicking outside nodes (mobile)
+document.addEventListener('touchstart', (e) => {
+  if (!e.target.closest('.node') && tooltipElement) {
+    hideNodeTooltip();
+  }
+});
 
 
 // Audio Controls
