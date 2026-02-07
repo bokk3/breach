@@ -41,6 +41,9 @@ class SpaceShooterMinigame {
     this.renderer.setClearColor(0x000011);
     container.appendChild(this.renderer.domElement);
 
+    // Add crosshair overlay
+    this.createCrosshair(container);
+
     // Lighting
     const ambientLight = new THREE.AmbientLight(0x404040);
     this.scene.add(ambientLight);
@@ -68,7 +71,7 @@ class SpaceShooterMinigame {
     const lineMaterial = new THREE.LineBasicMaterial({ 
       color: 0x00ffff,
       transparent: true,
-      opacity: 0.3
+      opacity: 0.5
     });
     this.targetLine = new THREE.Line(lineGeometry, lineMaterial);
     this.player.add(this.targetLine);
@@ -107,6 +110,46 @@ class SpaceShooterMinigame {
     this.animate();
   }
 
+  createCrosshair(container) {
+    // Create crosshair element
+    this.crosshair = document.createElement('div');
+    this.crosshair.className = 'shooter-crosshair';
+    this.crosshair.innerHTML = `
+      <div class="crosshair-center"></div>
+      <div class="crosshair-line crosshair-top"></div>
+      <div class="crosshair-line crosshair-right"></div>
+      <div class="crosshair-line crosshair-bottom"></div>
+      <div class="crosshair-line crosshair-left"></div>
+    `;
+    container.appendChild(this.crosshair);
+    
+    // Position crosshair at center initially
+    this.updateCrosshairPosition(container.clientWidth / 2, container.clientHeight / 2);
+  }
+
+  updateCrosshairPosition(x, y) {
+    if (this.crosshair) {
+      this.crosshair.style.left = x + 'px';
+      this.crosshair.style.top = y + 'px';
+    }
+  }
+
+  highlightCrosshair(hit = false) {
+    if (!this.crosshair) return;
+    
+    if (hit) {
+      this.crosshair.classList.add('crosshair-hit');
+      setTimeout(() => {
+        if (this.crosshair) this.crosshair.classList.remove('crosshair-hit');
+      }, 100);
+    } else {
+      this.crosshair.classList.add('crosshair-shoot');
+      setTimeout(() => {
+        if (this.crosshair) this.crosshair.classList.remove('crosshair-shoot');
+      }, 100);
+    }
+  }
+
   handleKeyDown(e) {
     this.keys[e.key.toLowerCase()] = true;
     if (e.key === ' ' || e.key === 'Spacebar') {
@@ -120,8 +163,45 @@ class SpaceShooterMinigame {
   }
 
   handleMouseMove(e) {
-    this.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-    this.mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    this.mouseX = (x / rect.width) * 2 - 1;
+    this.mouseY = -(y / rect.height) * 2 + 1;
+    
+    // Update crosshair position
+    this.updateCrosshairPosition(x, y);
+    
+    // Check if aiming at enemy
+    this.checkAimAtEnemy();
+  }
+
+  checkAimAtEnemy() {
+    if (!this.crosshair) return;
+    
+    // Create raycaster from player position in direction of aim
+    const raycaster = new THREE.Raycaster();
+    const direction = new THREE.Vector3(this.mouseX * 8, this.mouseY * 4, -20);
+    direction.sub(this.player.position).normalize();
+    raycaster.set(this.player.position, direction);
+    
+    // Check if aiming near any enemy
+    let aimingAtEnemy = false;
+    for (const enemy of this.enemies) {
+      const distance = raycaster.ray.distanceToPoint(enemy.position);
+      if (distance < 1.5) {
+        aimingAtEnemy = true;
+        break;
+      }
+    }
+    
+    // Update crosshair appearance
+    if (aimingAtEnemy) {
+      this.crosshair.classList.add('crosshair-target');
+    } else {
+      this.crosshair.classList.remove('crosshair-target');
+    }
   }
 
   handleClick() {
@@ -163,11 +243,38 @@ class SpaceShooterMinigame {
     
     bullet.position.copy(this.player.position);
     
-    // Shoot straight forward (negative Z direction)
-    bullet.velocity = new THREE.Vector3(0, 0, -0.5);
+    // Calculate direction based on mouse position with aim assist
+    const targetX = this.mouseX * 8;
+    const targetY = this.mouseY * 4;
+    const targetZ = -20;
+    
+    // Check for nearby enemies and apply aim assist
+    let aimTarget = new THREE.Vector3(targetX, targetY, targetZ);
+    let closestEnemy = null;
+    let closestDistance = Infinity;
+    
+    for (const enemy of this.enemies) {
+      const distanceToAim = enemy.position.distanceTo(aimTarget);
+      if (distanceToAim < 2 && distanceToAim < closestDistance) {
+        closestEnemy = enemy;
+        closestDistance = distanceToAim;
+      }
+    }
+    
+    // Apply aim assist if enemy is close to crosshair
+    if (closestEnemy) {
+      aimTarget = closestEnemy.position.clone();
+    }
+    
+    // Calculate velocity toward target
+    const direction = aimTarget.sub(this.player.position).normalize();
+    bullet.velocity = direction.multiplyScalar(0.5);
     
     this.scene.add(bullet);
     this.bullets.push(bullet);
+
+    // Visual feedback
+    this.highlightCrosshair(false);
 
     // Play laser sound
     if (window.audio) window.audio.playLaser();
@@ -319,6 +426,9 @@ class SpaceShooterMinigame {
           this.bullets.splice(i, 1);
           bulletHit = true;
           
+          // Visual feedback for hit
+          this.highlightCrosshair(true);
+          
           if (enemy.health <= 0) {
             this.createExplosion(enemy.position, 0xff0044);
             this.scene.remove(enemy);
@@ -397,6 +507,11 @@ class SpaceShooterMinigame {
     window.removeEventListener('click', this.handleClick);
     window.removeEventListener('mousedown', this.handleMouseDown);
     window.removeEventListener('mouseup', this.handleMouseUp);
+
+    // Remove crosshair
+    if (this.crosshair && this.crosshair.parentNode) {
+      this.crosshair.parentNode.removeChild(this.crosshair);
+    }
 
     if (this.renderer) {
       this.renderer.dispose();

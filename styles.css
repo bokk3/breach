@@ -533,13 +533,43 @@ body {
 
 .node.active {
   background: rgba(0, 255, 255, 0.3);
-  box-shadow: 0 0 20px var(--neon-cyan), inset 0 0 20px var(--neon-cyan);
+  border: 3px solid var(--neon-cyan);
+  box-shadow: 0 0 30px var(--neon-cyan), 
+              inset 0 0 30px var(--neon-cyan),
+              0 0 50px rgba(0, 255, 255, 0.5);
   animation: pulse 1s infinite;
   z-index: 10;
+  transform: scale(1.05);
+}
+
+.node.active::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border: 2px solid var(--neon-cyan);
+  border-radius: inherit;
+  animation: activeRing 2s linear infinite;
+  opacity: 0;
+}
+
+@keyframes activeRing {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
 }
 
 .node.active .node-icon {
   animation: iconPulse 1s infinite;
+  font-size: 2rem;
+  filter: drop-shadow(0 0 10px var(--neon-cyan));
 }
 
 .node.active .node-pulse {
@@ -552,16 +582,72 @@ body {
   50% { transform: scale(1.15); }
 }
 
+/* Ensure hacked nodes are clearly visible on mobile */
+@media (max-width: 768px) {
+  .node.hacked::before {
+    background-size: 15px 15px;
+  }
+  
+  .node.in-range {
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.5);
+  }
+  
+  .node.active {
+    transform: scale(1.08);
+  }
+  
+  .node.active .node-icon {
+    font-size: 1.6rem;
+  }
+}
+
 .node.hacked {
   background: rgba(255, 0, 255, 0.3);
   border-color: var(--neon-magenta);
   box-shadow: 0 0 20px var(--neon-magenta), inset 0 0 20px var(--neon-magenta);
   color: var(--neon-magenta);
+  position: relative;
+}
+
+.node.hacked::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    transparent 25%, 
+    rgba(255, 0, 255, 0.1) 25%, 
+    rgba(255, 0, 255, 0.1) 50%, 
+    transparent 50%, 
+    transparent 75%, 
+    rgba(255, 0, 255, 0.1) 75%);
+  background-size: 20px 20px;
+  animation: breachPattern 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes breachPattern {
+  0% { background-position: 0 0; }
+  100% { background-position: 20px 20px; }
 }
 
 .node.hacked .node-icon {
   color: var(--neon-magenta);
   text-shadow: 0 0 15px var(--neon-magenta);
+  animation: hackedIconPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes hackedIconPulse {
+  0%, 100% { 
+    transform: scale(1);
+    filter: drop-shadow(0 0 5px var(--neon-magenta));
+  }
+  50% { 
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 15px var(--neon-magenta));
+  }
 }
 
 .node.hacked .node-core {
@@ -572,6 +658,102 @@ body {
 .node.hacked .node-pulse {
   border-color: var(--neon-magenta);
   animation: none;
+}
+
+/* In-range nodes (adjacent to active node) */
+.node.in-range {
+  border-color: var(--neon-yellow);
+  background: rgba(255, 255, 0, 0.15);
+  box-shadow: 0 0 20px rgba(255, 255, 0, 0.4);
+  animation: inRangePulse 1.5s ease-in-out infinite;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.node.in-range .node-icon {
+  animation: inRangeIconBounce 1s ease-in-out infinite;
+}
+
+.node.in-range .node-core {
+  border-color: var(--neon-yellow);
+  opacity: 0.6;
+  animation: coreRotate 3s linear infinite;
+}
+
+.node.in-range .node-pulse {
+  border-color: var(--neon-yellow);
+  animation-duration: 1s;
+  opacity: 0.8;
+}
+
+@keyframes inRangePulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 255, 0, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 255, 0, 0.7);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes inRangeIconBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Connection lines from active node to in-range nodes */
+.node.in-range::after {
+  content: '';
+  position: absolute;
+  background: linear-gradient(90deg, 
+    var(--neon-yellow), 
+    transparent);
+  box-shadow: 0 0 10px var(--neon-yellow);
+  opacity: 0.6;
+  animation: connectionPulse 1.5s ease-in-out infinite;
+  z-index: -1;
+}
+
+.node.in-range.connection-line-top::after {
+  top: -12px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--neon-yellow), transparent);
+}
+
+.node.in-range.connection-line-bottom::after {
+  bottom: -12px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  transform: translateX(-50%);
+  background: linear-gradient(0deg, var(--neon-yellow), transparent);
+}
+
+.node.in-range.connection-line-left::after {
+  left: -12px;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, var(--neon-yellow), transparent);
+}
+
+.node.in-range.connection-line-right::after {
+  right: -12px;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(270deg, var(--neon-yellow), transparent);
+}
+
+@keyframes connectionPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
 }
 
 .node.firewall {
@@ -1760,6 +1942,7 @@ button.minigame-toggle:hover {
   min-height: 400px;
   max-height: 60vh;
   overflow: hidden;
+  cursor: none; /* Hide default cursor */
 }
 
 .shooter-game canvas {
@@ -1773,6 +1956,101 @@ button.minigame-toggle:hover {
   color: var(--neon-cyan);
   font-size: 0.9rem;
   opacity: 0.7;
+}
+
+/* Crosshair Styles */
+.shooter-crosshair {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+  transition: all 0.1s ease-out;
+}
+
+.crosshair-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--neon-cyan);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px var(--neon-cyan);
+}
+
+.crosshair-line {
+  position: absolute;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 5px var(--neon-cyan);
+}
+
+.crosshair-top {
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  transform: translateX(-50%);
+}
+
+.crosshair-bottom {
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  transform: translateX(-50%);
+}
+
+.crosshair-left {
+  left: 0;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.crosshair-right {
+  right: 0;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+/* Crosshair states */
+.shooter-crosshair.crosshair-target {
+  animation: crosshairPulse 0.5s ease-in-out infinite;
+}
+
+.shooter-crosshair.crosshair-target .crosshair-center,
+.shooter-crosshair.crosshair-target .crosshair-line {
+  background: #ff0044;
+  box-shadow: 0 0 15px #ff0044;
+}
+
+.shooter-crosshair.crosshair-shoot {
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+.shooter-crosshair.crosshair-hit {
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+.shooter-crosshair.crosshair-hit .crosshair-center,
+.shooter-crosshair.crosshair-hit .crosshair-line {
+  background: var(--neon-yellow);
+  box-shadow: 0 0 20px var(--neon-yellow);
+}
+
+@keyframes crosshairPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
 }
 
 @media (max-width: 768px) {

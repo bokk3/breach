@@ -469,6 +469,9 @@ function completeHackSequence() {
   nodeElement.classList.add('active', 'hacked');
   gameState.hackedNodes.add(index);
   
+  // Highlight adjacent nodes (in range)
+  highlightAdjacentNodes(index);
+  
   createParticles(nodeElement, '#00ffff');
   updateProgress();
   addXPToProfile(xpGain, nodeElement);
@@ -564,6 +567,42 @@ function getAdjacentNodes(index) {
   if (row < GRID_SIZE / cols - 1) adjacent.push(index + cols);
   
   return adjacent;
+}
+
+// Highlight nodes adjacent to the active node
+function highlightAdjacentNodes(activeIndex) {
+  // Remove all previous highlights
+  document.querySelectorAll('.node').forEach(node => {
+    node.classList.remove('in-range', 'connection-line-top', 'connection-line-right', 
+                          'connection-line-bottom', 'connection-line-left');
+  });
+  
+  const adjacentIndices = getAdjacentNodes(activeIndex);
+  const cols = 8;
+  const activeRow = Math.floor(activeIndex / cols);
+  const activeCol = activeIndex % cols;
+  
+  adjacentIndices.forEach(adjIndex => {
+    const nodeElement = document.querySelector(`[data-index="${adjIndex}"]`);
+    if (!nodeElement) return;
+    
+    // Don't highlight already hacked nodes or firewalls
+    if (gameState.hackedNodes.has(adjIndex) || gameState.firewallNodes.has(adjIndex)) {
+      return;
+    }
+    
+    // Add in-range class
+    nodeElement.classList.add('in-range');
+    
+    // Add connection line direction
+    const adjRow = Math.floor(adjIndex / cols);
+    const adjCol = adjIndex % cols;
+    
+    if (adjRow < activeRow) nodeElement.classList.add('connection-line-bottom');
+    if (adjRow > activeRow) nodeElement.classList.add('connection-line-top');
+    if (adjCol < activeCol) nodeElement.classList.add('connection-line-right');
+    if (adjCol > activeCol) nodeElement.classList.add('connection-line-left');
+  });
 }
 
 // Defense System Functions
