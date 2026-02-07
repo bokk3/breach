@@ -100,6 +100,12 @@
       </div>
     </div>
 
+    <!-- Active Power-Ups Display -->
+    <div class="active-powerups-container" id="activePowerUpsContainer" style="display: none;">
+      <div class="powerups-label">ACTIVE POWER-UPS:</div>
+      <div class="active-powerups" id="activePowerUps"></div>
+    </div>
+
     <div class="progress-container">
       <div class="progress-bar" id="progress"></div>
       <div class="progress-text" id="progressText">0% INFILTRATED</div>
@@ -167,6 +173,11 @@
     </div>
   </div>
 
+  <!-- Code Breaker Modal -->
+  <div class="hack-modal" id="codebreakerModal">
+    <div id="codebreakerGame"></div>
+  </div>
+
   <!-- Victory Screen -->
   <div class="victory" id="victory">
     <div class="victory-content">
@@ -217,6 +228,7 @@
   <!-- Game Scripts -->
   <script src="audio.js"></script>
   <script src="spaceshooter-minigame.js"></script>
+  <script src="codebreaker-minigame.js"></script>
   <script src="auth.js"></script>
   <script src="game.js"></script>
 </body>

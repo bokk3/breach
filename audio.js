@@ -454,6 +454,34 @@ class AudioSystem {
     osc.stop(now + 0.3);
   }
 
+  // Power-up collect sound
+  playPowerUpCollect() {
+    if (!this.enabled || !this.initialized) return;
+
+    const now = this.context.currentTime;
+    
+    // Ascending chime
+    const { osc: osc1, gain: gain1 } = this.createOscillator('sine', 800, 0.4, 0.3);
+    const { osc: osc2, gain: gain2 } = this.createOscillator('sine', 1200, 0.4, 0.3);
+    
+    osc1.frequency.setValueAtTime(800, now);
+    osc1.frequency.exponentialRampToValueAtTime(1600, now + 0.2);
+    
+    osc2.frequency.setValueAtTime(1200, now + 0.1);
+    osc2.frequency.exponentialRampToValueAtTime(2400, now + 0.3);
+    
+    gain1.gain.setValueAtTime(0.3 * this.volume, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    
+    gain2.gain.setValueAtTime(0.3 * this.volume, now + 0.1);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    
+    osc1.start(now);
+    osc1.stop(now + 0.4);
+    osc2.start(now + 0.1);
+    osc2.stop(now + 0.4);
+  }
+
   // Set volume (0-1)
   setVolume(vol) {
     this.volume = Math.max(0, Math.min(1, vol));

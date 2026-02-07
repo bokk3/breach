@@ -3,6 +3,91 @@ const GRID_SIZE = 48;
 const FIREWALL_COUNT = 8;
 const SYMBOLS = ['◆', '▲', '●', '■', '★', '✦', '◈', '◉'];
 
+// Progressive Difficulty System
+const DIFFICULTY_SYSTEM = {
+  getMinigameDifficulty: (nodesHacked) => {
+    // Start at 1, increase every 5 nodes, cap at 10
+    return Math.min(1 + Math.floor(nodesHacked / 5), 10);
+  },
+  getPatternLength: (difficulty) => {
+    // Pattern: 2-8 symbols
+    return Math.min(2 + difficulty, 8);
+  },
+  getPatternTime: (difficulty) => {
+    // Time: 10s down to 5s
+    return Math.max(10000 - (difficulty * 500), 5000);
+  },
+  getCodeLength: (difficulty) => {
+    // Code Breaker: 3-6 digits
+    if (difficulty <= 2) return 3;
+    if (difficulty <= 5) return 4;
+    if (difficulty <= 7) return 5;
+    return 6;
+  },
+  getCodeAttempts: (difficulty) => {
+    // Attempts: 7 down to 4
+    return Math.max(7 - Math.floor(difficulty / 3), 4);
+  },
+  getShooterEnemies: (difficulty) => {
+    // Enemies: 2-8
+    return Math.min(2 + difficulty, 8);
+  },
+  getShooterSpeed: (difficulty) => {
+    // Enemy speed multiplier: 1.0 to 1.5
+    return 1.0 + (difficulty * 0.05);
+  }
+};
+
+// Power-Up System
+const POWERUP_TYPES = {
+  TIME_FREEZE: {
+    id: 'time_freeze',
+    name: 'TIME FREEZE',
+    icon: '⏸',
+    color: '#00ffff',
+    duration: 15000,
+    description: 'Pause defense timer for 15s'
+  },
+  SHIELD: {
+    id: 'shield',
+    name: 'SHIELD',
+    icon: '🛡',
+    color: '#ffff00',
+    duration: null,
+    description: 'Next firewall hit is free'
+  },
+  DOUBLE_XP: {
+    id: 'double_xp',
+    name: 'DOUBLE XP',
+    icon: '✨',
+    color: '#ff00ff',
+    duration: 30000,
+    description: '2x XP for 30s'
+  },
+  EASY_MODE: {
+    id: 'easy_mode',
+    name: 'EASY MODE',
+    icon: '🎯',
+    color: '#00ff00',
+    duration: 20000,
+    description: 'Reduce difficulty for 20s'
+  },
+  REVEAL: {
+    id: 'reveal',
+    name: 'REVEAL',
+    icon: '👁',
+    color: '#ff6400',
+    duration: null,
+    description: 'Show next threatened node'
+  }
+};
+
+const POWERUP_CONFIG = {
+  dropChance: 0.15, // 15% chance per node
+  maxActive: 3, // Max 3 power-ups on grid at once
+  valuableNodeBonus: 0.25 // +25% chance from valuable nodes
+};
+
 // Defense System Configuration
 const DEFENSE_SYSTEM = {
   enabled: true,
@@ -125,11 +210,14 @@ let gameState = {
   hackedNodes: new Set(),
   firewallNodes: new Set(),
   valuableNodes: new Set(),
-  threatenedNodes: new Set(), // Nodes about to become firewalls
+  threatenedNodes: new Set(),
+  powerUpNodes: new Map(), // Map of node index -> powerup type
+  activePowerUps: new Map(), // Map of powerup id -> expiry time
   gameStarted: false,
   combo: 0,
   maxCombo: 0,
-  defensesCreated: 0
+  defensesCreated: 0,
+  currentDifficulty: 1
 };
 
 let hackSequence = {
@@ -140,7 +228,8 @@ let hackSequence = {
   timerInterval: null,
   pendingNode: null,
   pendingElement: null,
-  difficulty: 3
+  difficulty: 1,
+  baseDifficulty: 1
 };
 
 // DOM Elements
@@ -318,6 +407,15 @@ function handleNodeClick(index, nodeElement) {
   }
 
   if (gameState.firewallNodes.has(index)) {
+    // Check for shield power-up
+    if (gameState.activePowerUps.has('shield')) {
+      gameState.activePowerUps.delete('shield');
+      addLog(`> SHIELD ABSORBED FIREWALL HIT!`, 'success');
+      createParticles(nodeElement, '#ffff00');
+      if (window.audio) window.audio.playPowerUpCollect();
+      return;
+    }
+    
     addLog(`> FIREWALL DETECTED AT NODE ${index}! -50 POINTS`, 'error');
     gameState.score = Math.max(0, gameState.score - 50);
     gameState.combo = 0;
@@ -336,10 +434,24 @@ function handleNodeClick(index, nodeElement) {
 function startHackSequence(index, nodeElement) {
   hackSequence.pendingNode = index;
   hackSequence.pendingElement = nodeElement;
-  hackSequence.difficulty = Math.min(3 + Math.floor(gameState.combo / 3), 7);
+  
+  // Calculate difficulty based on progress
+  hackSequence.baseDifficulty = gameState.currentDifficulty;
+  
+  // Apply Easy Mode power-up
+  if (gameState.activePowerUps.has('easy_mode')) {
+    hackSequence.difficulty = Math.max(1, hackSequence.baseDifficulty - 2);
+    addLog(`> EASY MODE ACTIVE - Difficulty reduced!`, 'success');
+  } else {
+    hackSequence.difficulty = hackSequence.baseDifficulty;
+  }
+  
+  // Pattern minigame uses progressive difficulty
+  const patternLength = DIFFICULTY_SYSTEM.getPatternLength(hackSequence.difficulty);
+  hackSequence.timeLimit = DIFFICULTY_SYSTEM.getPatternTime(hackSequence.difficulty);
   
   hackSequence.pattern = [];
-  for (let i = 0; i < hackSequence.difficulty; i++) {
+  for (let i = 0; i < patternLength; i++) {
     hackSequence.pattern.push(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
   }
   hackSequence.input = [];
@@ -360,7 +472,7 @@ function startHackSequence(index, nodeElement) {
     if (remaining <= 0) failHackSequence();
   }, 50);
 
-  addLog(`> INITIATING BREACH SEQUENCE - LEVEL ${hackSequence.difficulty}`, 'warning');
+  addLog(`> INITIATING BREACH SEQUENCE - DIFFICULTY ${hackSequence.difficulty}`, 'warning');
 }
 
 function displayPattern() {
@@ -436,6 +548,11 @@ function completeHackSequence() {
   let bonus = 100;
   let baseXP = 25;
   
+  // Check for power-up collection
+  if (gameState.powerUpNodes.has(index)) {
+    collectPowerUp(index);
+  }
+  
   if (gameState.valuableNodes.has(index)) {
     baseXP *= 2;
     bonus *= 1.5;
@@ -449,7 +566,13 @@ function completeHackSequence() {
   
   const comboMultiplier = 1 + (gameState.combo - 1) * 0.5;
   bonus = Math.floor(bonus * comboMultiplier);
-  const xpGain = Math.floor(baseXP * comboMultiplier);
+  let xpGain = Math.floor(baseXP * comboMultiplier);
+  
+  // Apply Double XP power-up
+  if (gameState.activePowerUps.has('double_xp')) {
+    xpGain *= 2;
+    addLog(`> DOUBLE XP ACTIVE! +${xpGain}XP`, 'success');
+  }
   
   addLog(`> NODE ${index} BREACHED! COMBO x${gameState.combo} +${bonus} +${xpGain}XP`, 'success');
 
@@ -469,11 +592,25 @@ function completeHackSequence() {
   nodeElement.classList.add('active', 'hacked');
   gameState.hackedNodes.add(index);
   
+  // Update difficulty based on progress
+  gameState.currentDifficulty = DIFFICULTY_SYSTEM.getMinigameDifficulty(gameState.hackedNodes.size);
+  
+  // Chance to spawn power-up on nearby nodes
+  const adjacentNodes = getAdjacentNodes(index);
+  adjacentNodes.forEach(adjIndex => {
+    if (!gameState.hackedNodes.has(adjIndex) && 
+        !gameState.firewallNodes.has(adjIndex) &&
+        !gameState.powerUpNodes.has(adjIndex)) {
+      spawnPowerUp(adjIndex);
+    }
+  });
+  
   // Highlight adjacent nodes (in range)
   highlightAdjacentNodes(index);
   
   createParticles(nodeElement, '#00ffff');
   updateProgress();
+  updatePowerUpDisplay();
   addXPToProfile(xpGain, nodeElement);
   
   // Play sounds
@@ -724,6 +861,217 @@ function convertToFirewall(index) {
   }
 }
 
+// Power-Up System Functions
+function spawnPowerUp(nodeIndex) {
+  // Check if we already have max power-ups
+  if (gameState.powerUpNodes.size >= POWERUP_CONFIG.maxActive) return;
+  
+  // Check if this node already has a power-up
+  if (gameState.powerUpNodes.has(nodeIndex)) return;
+  
+  // Calculate drop chance
+  let chance = POWERUP_CONFIG.dropChance;
+  if (gameState.valuableNodes.has(nodeIndex)) {
+    chance += POWERUP_CONFIG.valuableNodeBonus;
+  }
+  
+  // Roll for drop
+  if (Math.random() > chance) return;
+  
+  // Select random power-up type
+  const types = Object.values(POWERUP_TYPES);
+  const powerUp = types[Math.floor(Math.random() * types.length)];
+  
+  // Add to game state
+  gameState.powerUpNodes.set(nodeIndex, powerUp);
+  
+  // Add visual indicator
+  const nodeElement = document.querySelector(`[data-index="${nodeIndex}"]`);
+  if (nodeElement && !gameState.hackedNodes.has(nodeIndex)) {
+    const powerUpIcon = document.createElement('div');
+    powerUpIcon.className = 'powerup-icon';
+    powerUpIcon.textContent = powerUp.icon;
+    powerUpIcon.style.color = powerUp.color;
+    powerUpIcon.style.textShadow = `0 0 15px ${powerUp.color}`;
+    nodeElement.appendChild(powerUpIcon);
+    
+    addLog(`> POWER-UP DETECTED: ${powerUp.name}`, 'success');
+  }
+}
+
+function collectPowerUp(nodeIndex) {
+  const powerUp = gameState.powerUpNodes.get(nodeIndex);
+  if (!powerUp) return;
+  
+  // Remove from node
+  gameState.powerUpNodes.delete(nodeIndex);
+  
+  // Activate power-up
+  activatePowerUp(powerUp);
+  
+  // Visual feedback
+  const nodeElement = document.querySelector(`[data-index="${nodeIndex}"]`);
+  if (nodeElement) {
+    const powerUpIcon = nodeElement.querySelector('.powerup-icon');
+    if (powerUpIcon) powerUpIcon.remove();
+  }
+  
+  // Play sound
+  if (window.audio) window.audio.playPowerUpCollect();
+}
+
+function activatePowerUp(powerUp) {
+  addLog(`> POWER-UP ACTIVATED: ${powerUp.name}!`, 'success');
+  addLog(`> ${powerUp.description}`, 'warning');
+  
+  // Apply power-up effect
+  switch (powerUp.id) {
+    case 'time_freeze':
+      activateTimeFreeze(powerUp.duration);
+      break;
+    case 'shield':
+      activateShield();
+      break;
+    case 'double_xp':
+      activateDoubleXP(powerUp.duration);
+      break;
+    case 'easy_mode':
+      activateEasyMode(powerUp.duration);
+      break;
+    case 'reveal':
+      activateReveal();
+      break;
+  }
+  
+  // Show power-up notification
+  showPowerUpNotification(powerUp);
+}
+
+function activateTimeFreeze(duration) {
+  const expiryTime = Date.now() + duration;
+  gameState.activePowerUps.set('time_freeze', expiryTime);
+  
+  // Pause defense timer
+  if (gameState.defenseTimer) {
+    clearInterval(gameState.defenseTimer);
+    gameState.defenseTimer = null;
+  }
+  
+  // Resume after duration
+  setTimeout(() => {
+    gameState.activePowerUps.delete('time_freeze');
+    if (gameState.gameStarted && DEFENSE_SYSTEM.enabled) {
+      startDefenseSystem();
+    }
+    addLog('> TIME FREEZE EXPIRED', 'warning');
+  }, duration);
+}
+
+function activateShield() {
+  gameState.activePowerUps.set('shield', Infinity);
+  addLog('> SHIELD ACTIVE - Next firewall hit is free!', 'success');
+}
+
+function activateDoubleXP(duration) {
+  const expiryTime = Date.now() + duration;
+  gameState.activePowerUps.set('double_xp', expiryTime);
+  
+  setTimeout(() => {
+    gameState.activePowerUps.delete('double_xp');
+    addLog('> DOUBLE XP EXPIRED', 'warning');
+  }, duration);
+}
+
+function activateEasyMode(duration) {
+  const expiryTime = Date.now() + duration;
+  gameState.activePowerUps.set('easy_mode', expiryTime);
+  
+  setTimeout(() => {
+    gameState.activePowerUps.delete('easy_mode');
+    addLog('> EASY MODE EXPIRED', 'warning');
+  }, duration);
+}
+
+function activateReveal() {
+  // Find next node that will be threatened
+  const candidates = [];
+  for (let i = 0; i < GRID_SIZE; i++) {
+    if (!gameState.firewallNodes.has(i) && 
+        !gameState.hackedNodes.has(i) && 
+        !gameState.threatenedNodes.has(i) &&
+        i !== gameState.starterNode &&
+        !gameState.valuableNodes.has(i)) {
+      candidates.push(i);
+    }
+  }
+  
+  if (candidates.length > 0) {
+    const revealIndex = candidates[Math.floor(Math.random() * candidates.length)];
+    const nodeElement = document.querySelector(`[data-index="${revealIndex}"]`);
+    if (nodeElement) {
+      nodeElement.classList.add('revealed-threat');
+      setTimeout(() => nodeElement.classList.remove('revealed-threat'), 5000);
+      addLog(`> NODE ${revealIndex} WILL BE THREATENED SOON!`, 'warning');
+    }
+  }
+}
+
+function showPowerUpNotification(powerUp) {
+  const notification = document.createElement('div');
+  notification.className = 'powerup-notification';
+  notification.innerHTML = `
+    <div class="powerup-notif-icon" style="color: ${powerUp.color}; text-shadow: 0 0 20px ${powerUp.color};">
+      ${powerUp.icon}
+    </div>
+    <div class="powerup-notif-text">
+      <div class="powerup-notif-name">${powerUp.name}</div>
+      <div class="powerup-notif-desc">${powerUp.description}</div>
+    </div>
+  `;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => notification.remove(), 3000);
+}
+
+function updatePowerUpDisplay() {
+  // Update active power-ups display
+  const container = document.getElementById('activePowerUps');
+  const containerWrapper = document.getElementById('activePowerUpsContainer');
+  if (!container || !containerWrapper) return;
+  
+  container.innerHTML = '';
+  
+  if (gameState.activePowerUps.size === 0) {
+    containerWrapper.style.display = 'none';
+    return;
+  }
+  
+  containerWrapper.style.display = 'flex';
+  
+  gameState.activePowerUps.forEach((expiryTime, powerUpId) => {
+    const powerUp = Object.values(POWERUP_TYPES).find(p => p.id === powerUpId);
+    if (!powerUp) return;
+    
+    const remaining = expiryTime === Infinity ? '∞' : Math.ceil((expiryTime - Date.now()) / 1000) + 's';
+    
+    const element = document.createElement('div');
+    element.className = 'active-powerup';
+    element.style.borderColor = powerUp.color;
+    element.innerHTML = `
+      <span class="active-powerup-icon" style="color: ${powerUp.color};">${powerUp.icon}</span>
+      <span class="active-powerup-time">${remaining}</span>
+    `;
+    container.appendChild(element);
+  });
+}
+
+// Update power-up display every second
+setInterval(() => {
+  if (gameState.gameStarted) {
+    updatePowerUpDisplay();
+  }
+}, 1000);
+
 function updateProgress() {
   const percentage = Math.round((gameState.hackedNodes.size / (GRID_SIZE - FIREWALL_COUNT)) * 100);
   progressBar.style.width = percentage + '%';
@@ -837,10 +1185,13 @@ function resetGame() {
     firewallNodes: new Set(),
     valuableNodes: new Set(),
     threatenedNodes: new Set(),
+    powerUpNodes: new Map(),
+    activePowerUps: new Map(),
     gameStarted: false,
     combo: 0,
     maxCombo: 0,
-    defensesCreated: 0
+    defensesCreated: 0,
+    currentDifficulty: 1
   };
   
   hackSequence = {
@@ -851,7 +1202,8 @@ function resetGame() {
     timerInterval: null,
     pendingNode: null,
     pendingElement: null,
-    difficulty: 3
+    difficulty: 1,
+    baseDifficulty: 1
   };
   
   scoreEl.textContent = '0';
@@ -971,12 +1323,20 @@ document.querySelectorAll('button').forEach(btn => {
 
 
 // Minigame System
-let currentMinigame = 'pattern'; // 'pattern' or 'shooter'
+let currentMinigame = 'pattern'; // 'pattern', 'shooter', or 'codebreaker'
 let activeShooterGame = null;
+let activeCodeBreakerGame = null;
 
 // Toggle minigame type
 document.getElementById('minigameToggle').addEventListener('click', () => {
-  currentMinigame = currentMinigame === 'pattern' ? 'shooter' : 'pattern';
+  if (currentMinigame === 'pattern') {
+    currentMinigame = 'shooter';
+  } else if (currentMinigame === 'shooter') {
+    currentMinigame = 'codebreaker';
+  } else {
+    currentMinigame = 'pattern';
+  }
+  
   const btn = document.getElementById('minigameToggle');
   btn.textContent = `MINIGAME: ${currentMinigame.toUpperCase()}`;
   
@@ -985,11 +1345,13 @@ document.getElementById('minigameToggle').addEventListener('click', () => {
   addLog(`> MINIGAME MODE: ${currentMinigame.toUpperCase()}`, 'success');
 });
 
-// Modified startHackSequence to support both minigames
+// Modified startHackSequence to support all minigames
 const originalStartHackSequence = startHackSequence;
 startHackSequence = function(index, nodeElement) {
   if (currentMinigame === 'shooter') {
     startShooterMinigame(index, nodeElement);
+  } else if (currentMinigame === 'codebreaker') {
+    startCodeBreakerMinigame(index, nodeElement);
   } else {
     originalStartHackSequence(index, nodeElement);
   }
@@ -999,7 +1361,12 @@ startHackSequence = function(index, nodeElement) {
 function startShooterMinigame(index, nodeElement) {
   hackSequence.pendingNode = index;
   hackSequence.pendingElement = nodeElement;
-  hackSequence.difficulty = Math.min(3 + Math.floor(gameState.combo / 3), 7);
+  
+  // Use progressive difficulty
+  hackSequence.baseDifficulty = gameState.currentDifficulty;
+  hackSequence.difficulty = gameState.activePowerUps.has('easy_mode') 
+    ? Math.max(1, hackSequence.baseDifficulty - 2)
+    : hackSequence.baseDifficulty;
   
   const shooterModal = document.getElementById('shooterModal');
   const shooterGame = document.getElementById('shooterGame');
@@ -1035,6 +1402,43 @@ function startShooterMinigame(index, nodeElement) {
     }
     updateShooterHUD();
   }, 100);
+}
+
+// Code Breaker Minigame Integration
+function startCodeBreakerMinigame(index, nodeElement) {
+  hackSequence.pendingNode = index;
+  hackSequence.pendingElement = nodeElement;
+  
+  // Use progressive difficulty
+  hackSequence.baseDifficulty = gameState.currentDifficulty;
+  hackSequence.difficulty = gameState.activePowerUps.has('easy_mode') 
+    ? Math.max(1, hackSequence.baseDifficulty - 2)
+    : hackSequence.baseDifficulty;
+  
+  const codebreakerModal = document.getElementById('codebreakerModal');
+  const codebreakerGame = document.getElementById('codebreakerGame');
+  
+  codebreakerModal.classList.add('show');
+  addLog(`> INITIATING CODE BREACH - DIFFICULTY ${hackSequence.difficulty}`, 'warning');
+  
+  // Create code breaker instance
+  activeCodeBreakerGame = new CodeBreakerMinigame(hackSequence.difficulty);
+  
+  // Set up callbacks
+  activeCodeBreakerGame.onComplete = (score) => {
+    codebreakerModal.classList.remove('show');
+    codebreakerGame.innerHTML = '';
+    completeHackSequence();
+  };
+  
+  activeCodeBreakerGame.onFail = () => {
+    codebreakerModal.classList.remove('show');
+    codebreakerGame.innerHTML = '';
+    failHackSequence();
+  };
+  
+  // Initialize game
+  activeCodeBreakerGame.init(codebreakerGame);
 }
 
 function updateShooterHUD() {
