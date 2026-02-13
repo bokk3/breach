@@ -97,6 +97,21 @@ const DEFENSE_SYSTEM = {
   spreadFromHacked: true // Defenses spread from hacked nodes
 };
 
+// Dopamine Reward System
+const REWARD_SYSTEM = {
+  criticalHitChance: 0.10, // 10% chance for critical hit
+  criticalMultiplier: 3, // 3× rewards on critical
+  perfectBonusMultiplier: 1.5, // 50% bonus for perfect performance
+  streakMilestones: [5, 10, 15, 20], // Nodes for streak bonuses
+  streakBonusXP: [100, 250, 500, 1000], // XP rewards for milestones
+  comboMilestones: {
+    5: { message: 'IMPRESSIVE!', color: '#00ffff', shake: true },
+    10: { message: 'UNSTOPPABLE!', color: '#ff00ff', particles: 'rainbow' },
+    15: { message: 'LEGENDARY!', color: '#ffff00', flash: true, bonusXP: 500 },
+    20: { message: 'GODLIKE!', color: '#ff0000', rain: true, bonusXP: 1000 }
+  }
+};
+
 // XP Curve Configuration
 const XP_CURVE = {
   baseXP: 100,
@@ -217,7 +232,12 @@ let gameState = {
   combo: 0,
   maxCombo: 0,
   defensesCreated: 0,
-  currentDifficulty: 1
+  currentDifficulty: 1,
+  // Dopamine system tracking
+  hackStreak: 0,
+  criticalHits: 0,
+  perfectHacks: 0,
+  lastHackWasPerfect: false
 };
 
 let hackSequence = {
@@ -229,7 +249,10 @@ let hackSequence = {
   pendingNode: null,
   pendingElement: null,
   difficulty: 1,
-  baseDifficulty: 1
+  baseDifficulty: 1,
+  // Performance tracking
+  mistakes: 0,
+  damageTaken: 0
 };
 
 // DOM Elements
@@ -716,6 +739,7 @@ function handleSymbolInput(symbol, keyElement) {
       setTimeout(() => completeHackSequence(), 300);
     }
   } else {
+    hackSequence.mistakes++; // Track mistakes for perfect bonus
     keyElement.classList.add('wrong');
     if (window.audio) window.audio.playWrongInput();
     setTimeout(() => failHackSequence(), 500);
@@ -740,10 +764,29 @@ function completeHackSequence() {
   gameState.moves++;
   movesEl.textContent = gameState.moves;
   gameState.combo++;
+  gameState.hackStreak++;
   if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
 
   let bonus = 100;
   let baseXP = 25;
+  let bonusMultipliers = [];
+  
+  // Check for CRITICAL HIT!
+  const isCritical = Math.random() < REWARD_SYSTEM.criticalHitChance;
+  if (isCritical) {
+    gameState.criticalHits++;
+    bonusMultipliers.push({ name: 'CRITICAL HIT', multiplier: REWARD_SYSTEM.criticalMultiplier, color: '#ffff00' });
+  }
+  
+  // Check for PERFECT HACK!
+  const isPerfect = hackSequence.mistakes === 0 && hackSequence.damageTaken === 0;
+  if (isPerfect) {
+    gameState.perfectHacks++;
+    gameState.lastHackWasPerfect = true;
+    bonusMultipliers.push({ name: 'PERFECT', multiplier: REWARD_SYSTEM.perfectBonusMultiplier, color: '#ffd700' });
+  } else {
+    gameState.lastHackWasPerfect = false;
+  }
   
   // Check for power-up collection
   if (gameState.powerUpNodes.has(index)) {
@@ -765,13 +808,24 @@ function completeHackSequence() {
   bonus = Math.floor(bonus * comboMultiplier);
   let xpGain = Math.floor(baseXP * comboMultiplier);
   
+  // Apply bonus multipliers
+  bonusMultipliers.forEach(mult => {
+    bonus = Math.floor(bonus * mult.multiplier);
+    xpGain = Math.floor(xpGain * mult.multiplier);
+  });
+  
   // Apply Double XP power-up
   if (gameState.activePowerUps.has('double_xp')) {
     xpGain *= 2;
-    addLog(`> DOUBLE XP ACTIVE! +${xpGain}XP`, 'success');
   }
   
-  addLog(`> NODE ${index} BREACHED! COMBO x${gameState.combo} +${bonus} +${xpGain}XP`, 'success');
+  // Build log message
+  let logMessage = `> NODE ${index} BREACHED! COMBO x${gameState.combo}`;
+  bonusMultipliers.forEach(mult => {
+    logMessage += ` ${mult.name}!`;
+  });
+  logMessage += ` +${bonus} +${xpGain}XP`;
+  addLog(logMessage, 'success');
 
   gameState.score += bonus;
   gameState.sessionXP += xpGain;
@@ -805,20 +859,310 @@ function completeHackSequence() {
   // Highlight adjacent nodes (in range)
   highlightAdjacentNodes(index);
   
-  createParticles(nodeElement, '#00ffff');
+  // Enhanced particle effects
+  let particleColor = '#00ffff';
+  let particleCount = 20;
+  
+  if (isCritical) {
+    particleColor = '#ffff00';
+    particleCount = 50;
+    showRewardMessage('CRITICAL HIT!', '#ffff00', nodeElement);
+    screenFlash('#ffff00');
+  }
+  
+  if (isPerfect) {
+    particleColor = '#ffd700';
+    particleCount = Math.max(particleCount, 40);
+    showRewardMessage('PERFECT!', '#ffd700', nodeElement);
+  }
+  
+  createParticles(nodeElement, particleColor, particleCount);
+  
+  // Check for combo milestones
+  checkComboMilestone(gameState.combo);
+  
+  // Check for streak milestones
+  checkStreakMilestone(gameState.hackStreak);
+  
   updateProgress();
   updatePowerUpDisplay();
   addXPToProfile(xpGain, nodeElement);
   
   // Play sounds
   if (window.audio) {
-    window.audio.playHackSuccess();
+    if (isCritical) {
+      window.audio.playLevelUp(); // Use level up sound for critical
+    } else {
+      window.audio.playHackSuccess();
+    }
     window.audio.playCombo(gameState.combo);
     window.audio.playXPGain();
   }
+  
+  // Reset performance tracking for next hack
+  hackSequence.mistakes = 0;
+  hackSequence.damageTaken = 0;
 
   if (gameState.hackedNodes.size >= GRID_SIZE - FIREWALL_COUNT) {
     endGame(true);
+  }
+}
+
+function addXPToProfile(amount, sourceElement) {
+  const rect = sourceElement.getBoundingClientRect();
+  const xpPopup = document.createElement('div');
+  xpPopup.className = 'xp-popup';
+  xpPopup.textContent = `+${amount} XP`;
+  xpPopup.style.left = rect.left + rect.width / 2 + 'px';
+  xpPopup.style.top = rect.top + 'px';
+  document.body.appendChild(xpPopup);
+  setTimeout(() => xpPopup.remove(), 2000);
+  
+  const levelsGained = profile.addXP(amount);
+  updateProfileUI();
+  
+  levelsGained.forEach(level => {
+    showLevelUp(level);
+  });
+}
+
+// Dopamine Reward System Functions
+
+function showRewardMessage(message, color, sourceElement) {
+  const rect = sourceElement.getBoundingClientRect();
+  const rewardMsg = document.createElement('div');
+  rewardMsg.className = 'reward-message';
+  rewardMsg.textContent = message;
+  rewardMsg.style.color = color;
+  rewardMsg.style.textShadow = `0 0 20px ${color}, 0 0 40px ${color}`;
+  rewardMsg.style.left = rect.left + rect.width / 2 + 'px';
+  rewardMsg.style.top = rect.top - 40 + 'px';
+  document.body.appendChild(rewardMsg);
+  setTimeout(() => rewardMsg.remove(), 2000);
+}
+
+function screenFlash(color) {
+  const flash = document.createElement('div');
+  flash.className = 'screen-flash';
+  flash.style.background = `radial-gradient(circle, ${color}40, transparent 70%)`;
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 500);
+}
+
+function screenShake() {
+  document.body.style.animation = 'screenShake 0.5s';
+  setTimeout(() => {
+    document.body.style.animation = '';
+  }, 500);
+}
+
+function createParticles(element, color, count = 20) {
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  for (let i = 0; i < count; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.left = centerX + 'px';
+    particle.style.top = centerY + 'px';
+    particle.style.background = color;
+    particle.style.boxShadow = `0 0 10px ${color}`;
+    document.body.appendChild(particle);
+    
+    const angle = (Math.PI * 2 * i) / count;
+    const velocity = 2 + Math.random() * 3;
+    const vx = Math.cos(angle) * velocity;
+    const vy = Math.sin(angle) * velocity;
+    
+    let x = centerX, y = centerY, opacity = 1;
+    const animate = () => {
+      x += vx;
+      y += vy;
+      opacity -= 0.02;
+      particle.style.left = x + 'px';
+      particle.style.top = y + 'px';
+      particle.style.opacity = opacity;
+      if (opacity > 0) requestAnimationFrame(animate);
+      else particle.remove();
+    };
+    animate();
+  }
+}
+
+function createRainbowParticles(element) {
+  const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'];
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  for (let i = 0; i < 50; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.left = centerX + 'px';
+    particle.style.top = centerY + 'px';
+    const color = colors[i % colors.length];
+    particle.style.background = color;
+    particle.style.boxShadow = `0 0 15px ${color}`;
+    document.body.appendChild(particle);
+    
+    const angle = (Math.PI * 2 * i) / 50;
+    const velocity = 3 + Math.random() * 4;
+    const vx = Math.cos(angle) * velocity;
+    const vy = Math.sin(angle) * velocity;
+    
+    let x = centerX, y = centerY, opacity = 1;
+    const animate = () => {
+      x += vx;
+      y += vy;
+      opacity -= 0.015;
+      particle.style.left = x + 'px';
+      particle.style.top = y + 'px';
+      particle.style.opacity = opacity;
+      if (opacity > 0) requestAnimationFrame(animate);
+      else particle.remove();
+    };
+    animate();
+  }
+}
+
+function createParticleRain() {
+  const rainInterval = setInterval(() => {
+    for (let i = 0; i < 5; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * window.innerWidth + 'px';
+      particle.style.top = '-10px';
+      const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#ff00ff'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      particle.style.background = color;
+      particle.style.boxShadow = `0 0 15px ${color}`;
+      document.body.appendChild(particle);
+      
+      let y = -10;
+      const speed = 3 + Math.random() * 3;
+      const animate = () => {
+        y += speed;
+        particle.style.top = y + 'px';
+        if (y < window.innerHeight) {
+          requestAnimationFrame(animate);
+        } else {
+          particle.remove();
+        }
+      };
+      animate();
+    }
+  }, 100);
+  
+  // Stop rain after 3 seconds
+  setTimeout(() => clearInterval(rainInterval), 3000);
+}
+
+function checkComboMilestone(combo) {
+  const milestone = REWARD_SYSTEM.comboMilestones[combo];
+  if (!milestone) return;
+  
+  // Show milestone message
+  const milestoneMsg = document.createElement('div');
+  milestoneMsg.className = 'milestone-message';
+  milestoneMsg.textContent = milestone.message;
+  milestoneMsg.style.color = milestone.color;
+  milestoneMsg.style.textShadow = `0 0 30px ${milestone.color}, 0 0 60px ${milestone.color}`;
+  document.body.appendChild(milestoneMsg);
+  setTimeout(() => milestoneMsg.remove(), 2000);
+  
+  addLog(`> >>> ${milestone.message} <<<`, 'success');
+  
+  // Visual effects
+  if (milestone.shake) {
+    screenShake();
+  }
+  
+  if (milestone.flash) {
+    screenFlash(milestone.color);
+  }
+  
+  if (milestone.particles === 'rainbow') {
+    const activeNode = document.querySelector(`[data-index="${gameState.activeNode}"]`);
+    if (activeNode) createRainbowParticles(activeNode);
+  }
+  
+  if (milestone.rain) {
+    createParticleRain();
+  }
+  
+  // Bonus XP
+  if (milestone.bonusXP) {
+    gameState.sessionXP += milestone.bonusXP;
+    sessionXPEl.textContent = gameState.sessionXP;
+    addLog(`> MILESTONE BONUS: +${milestone.bonusXP} XP!`, 'success');
+    
+    const activeNode = document.querySelector(`[data-index="${gameState.activeNode}"]`);
+    if (activeNode) {
+      const rect = activeNode.getBoundingClientRect();
+      const bonusPopup = document.createElement('div');
+      bonusPopup.className = 'xp-popup';
+      bonusPopup.textContent = `BONUS +${milestone.bonusXP} XP`;
+      bonusPopup.style.left = rect.left + rect.width / 2 + 'px';
+      bonusPopup.style.top = rect.top - 60 + 'px';
+      bonusPopup.style.fontSize = '2rem';
+      document.body.appendChild(bonusPopup);
+      setTimeout(() => bonusPopup.remove(), 2000);
+      
+      profile.addXP(milestone.bonusXP);
+      updateProfileUI();
+    }
+  }
+  
+  // Play special sound
+  if (window.audio) {
+    window.audio.playLevelUp();
+  }
+}
+
+function checkStreakMilestone(streak) {
+  const milestoneIndex = REWARD_SYSTEM.streakMilestones.indexOf(streak);
+  if (milestoneIndex === -1) return;
+  
+  const bonusXP = REWARD_SYSTEM.streakBonusXP[milestoneIndex];
+  
+  // Show streak message
+  const streakMsg = document.createElement('div');
+  streakMsg.className = 'milestone-message';
+  streakMsg.textContent = `${streak} NODE STREAK!`;
+  streakMsg.style.color = '#ff6600';
+  streakMsg.style.textShadow = '0 0 30px #ff6600, 0 0 60px #ff6600';
+  document.body.appendChild(streakMsg);
+  setTimeout(() => streakMsg.remove(), 2000);
+  
+  addLog(`> ${streak} NODE STREAK! BONUS +${bonusXP} XP!`, 'success');
+  
+  gameState.sessionXP += bonusXP;
+  sessionXPEl.textContent = gameState.sessionXP;
+  
+  const activeNode = document.querySelector(`[data-index="${gameState.activeNode}"]`);
+  if (activeNode) {
+    createParticles(activeNode, '#ff6600', 40);
+    
+    const rect = activeNode.getBoundingClientRect();
+    const bonusPopup = document.createElement('div');
+    bonusPopup.className = 'xp-popup';
+    bonusPopup.textContent = `STREAK +${bonusXP} XP`;
+    bonusPopup.style.left = rect.left + rect.width / 2 + 'px';
+    bonusPopup.style.top = rect.top - 80 + 'px';
+    bonusPopup.style.fontSize = '1.8rem';
+    bonusPopup.style.color = '#ff6600';
+    document.body.appendChild(bonusPopup);
+    setTimeout(() => bonusPopup.remove(), 2000);
+    
+    profile.addXP(bonusXP);
+    updateProfileUI();
+  }
+  
+  screenFlash('#ff6600');
+  
+  if (window.audio) {
+    window.audio.playLevelUp();
   }
 }
 
@@ -884,9 +1228,14 @@ function failHackSequence() {
   clearInterval(hackSequence.timerInterval);
   hackModal.classList.remove('show');
   gameState.combo = 0;
+  gameState.hackStreak = 0; // Reset streak on failure
   comboEl.textContent = 'x0';
   addLog('> BREACH SEQUENCE FAILED! COMBO RESET', 'error');
   if (window.audio) window.audio.playHackFail();
+  
+  // Reset performance tracking
+  hackSequence.mistakes = 0;
+  hackSequence.damageTaken = 0;
 }
 
 function getAdjacentNodes(index) {
@@ -1388,7 +1737,12 @@ function resetGame() {
     combo: 0,
     maxCombo: 0,
     defensesCreated: 0,
-    currentDifficulty: 1
+    currentDifficulty: 1,
+    // Dopamine system tracking
+    hackStreak: 0,
+    criticalHits: 0,
+    perfectHacks: 0,
+    lastHackWasPerfect: false
   };
   
   hackSequence = {
@@ -1400,7 +1754,10 @@ function resetGame() {
     pendingNode: null,
     pendingElement: null,
     difficulty: 1,
-    baseDifficulty: 1
+    baseDifficulty: 1,
+    // Performance tracking
+    mistakes: 0,
+    damageTaken: 0
   };
   
   scoreEl.textContent = '0';

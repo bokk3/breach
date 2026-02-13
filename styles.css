@@ -2475,6 +2475,148 @@ button.minigame-toggle:hover {
   }
 }
 
+/* Dopamine Reward System Styles */
+
+.reward-message {
+  position: fixed;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 3rem;
+  font-weight: 900;
+  pointer-events: none;
+  z-index: 1800;
+  animation: rewardFloat 2s forwards;
+  transform: translate(-50%, 0);
+  letter-spacing: 3px;
+}
+
+@keyframes rewardFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -20px) scale(1.2);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -40px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60px) scale(0.8);
+  }
+}
+
+.milestone-message {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 5rem;
+  font-weight: 900;
+  pointer-events: none;
+  z-index: 1900;
+  animation: milestoneAppear 2s forwards;
+  letter-spacing: 5px;
+}
+
+@keyframes milestoneAppear {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3) rotateZ(-10deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.3) rotateZ(5deg);
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1) rotateZ(0deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotateZ(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5) rotateZ(0deg);
+  }
+}
+
+.screen-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1700;
+  opacity: 0;
+  animation: flashEffect 0.5s;
+}
+
+@keyframes flashEffect {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5px, 2px); }
+  20% { transform: translate(5px, -2px); }
+  30% { transform: translate(-5px, -2px); }
+  40% { transform: translate(5px, 2px); }
+  50% { transform: translate(-5px, -2px); }
+  60% { transform: translate(5px, 2px); }
+  70% { transform: translate(-5px, -2px); }
+  80% { transform: translate(5px, -2px); }
+  90% { transform: translate(-5px, 2px); }
+}
+
+/* Enhanced XP Popup for bigger rewards */
+.xp-popup {
+  position: fixed;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 20px var(--neon-yellow), 0 0 40px var(--neon-yellow), 0 0 60px var(--neon-yellow);
+  pointer-events: none;
+  z-index: 1000;
+  animation: xpPopup 2s forwards;
+  transform: translate(-50%, 0);
+}
+
+/* Mobile responsive for reward messages */
+@media (max-width: 768px) {
+  .reward-message {
+    font-size: 2rem;
+  }
+  
+  .milestone-message {
+    font-size: 3rem;
+  }
+  
+  .xp-popup {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .reward-message {
+    font-size: 1.5rem;
+  }
+  
+  .milestone-message {
+    font-size: 2.2rem;
+  }
+  
+  .xp-popup {
+    font-size: 1.5rem;
+  }
+}
+
 /* Node Tooltip Styles */
 .node-tooltip {
   position: fixed;
