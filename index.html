@@ -59,6 +59,13 @@
     <h1 class="title">CYBER BREACH</h1>
     <div class="subtitle">Neural Network Infiltration</div>
     
+    <!-- 3D/2D Toggle -->
+    <div class="view-toggle">
+      <button id="viewToggle" class="view-toggle-btn" title="Toggle 2D/3D View">
+        <span id="viewToggleText">3D VIEW</span>
+      </button>
+    </div>
+    
     <!-- Player Profile -->
     <div class="profile-container">
       <div class="profile-header">
@@ -112,7 +119,11 @@
     </div>
     
     <div class="game-area">
+      <!-- 2D Grid (default) -->
       <div class="node-grid" id="grid"></div>
+      
+      <!-- 3D Network (hidden by default) -->
+      <div class="network-3d" id="network3d" style="display: none;"></div>
       
       <div class="terminal" id="terminal">
         <div class="log-entry log-success">> SYSTEM INITIALIZED</div>
@@ -222,11 +233,12 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-  <!-- Three.js for 3D minigame -->
+  <!-- Three.js for 3D minigame and 3D network -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <!-- Game Scripts -->
   <script src="audio.js"></script>
+  <script src="network-3d.js"></script>
   <script src="spaceshooter-minigame.js"></script>
   <script src="codebreaker-minigame.js"></script>
   <script src="auth.js"></script>

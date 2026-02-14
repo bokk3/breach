@@ -257,6 +257,7 @@ let hackSequence = {
 
 // DOM Elements
 const grid = document.getElementById('grid');
+const network3dContainer = document.getElementById('network3d');
 const terminal = document.getElementById('terminal');
 const scoreEl = document.getElementById('score');
 const comboEl = document.getElementById('combo');
@@ -275,6 +276,10 @@ const totalXPEl = document.getElementById('totalXP');
 const highScoreEl = document.getElementById('highScore');
 const globalXPBar = document.getElementById('globalXPBar');
 const globalXPBarText = document.getElementById('globalXPBarText');
+
+// 3D Network System
+let network3D = null;
+let is3DMode = false;
 
 // Initialize UI
 function updateProfileUI() {
@@ -2013,3 +2018,125 @@ function updateShooterHUD() {
   const healthBar = document.getElementById('shooterHealth');
   healthBar.style.width = `${activeShooterGame.health}%`;
 }
+
+
+// 3D/2D View Toggle System
+function toggle3DView() {
+  is3DMode = !is3DMode;
+  
+  const viewToggleText = document.getElementById('viewToggleText');
+  
+  if (is3DMode) {
+    // Switch to 3D
+    grid.style.display = 'none';
+    network3dContainer.style.display = 'block';
+    viewToggleText.textContent = '2D VIEW';
+    
+    // Initialize 3D network if not already done
+    if (!network3D) {
+      network3D = new Network3D(network3dContainer);
+      network3D.onNodeClick = (index) => {
+        // Find the corresponding 2D node element for game logic
+        const nodeElement = document.querySelector(`[data-index="${index}"]`);
+        if (nodeElement) {
+          handleNodeClick(index, nodeElement);
+        }
+      };
+    }
+    
+    // Sync 3D network with current game state
+    sync3DNetwork();
+    
+    addLog('> 3D NETWORK VIEW ACTIVATED', 'success');
+    if (window.audio) window.audio.playButtonClick();
+  } else {
+    // Switch to 2D
+    grid.style.display = 'grid';
+    network3dContainer.style.display = 'none';
+    viewToggleText.textContent = '3D VIEW';
+    
+    addLog('> 2D GRID VIEW ACTIVATED', 'success');
+    if (window.audio) window.audio.playButtonClick();
+  }
+}
+
+// Sync 3D network with current game state
+function sync3DNetwork() {
+  if (!network3D) return;
+  
+  // Prepare node data for 3D network
+  const nodeData = [];
+  for (let i = 0; i < GRID_SIZE; i++) {
+    const nodeElement = document.querySelector(`[data-index="${i}"]`);
+    let type = 'standard';
+    
+    if (i === gameState.starterNode) {
+      type = 'starter';
+    } else if (gameState.firewallNodes.has(i)) {
+      type = 'firewall';
+    } else if (gameState.valuableNodes.has(i)) {
+      type = 'valuable';
+    }
+    
+    nodeData.push({
+      index: i,
+      type: type,
+      state: 'available'
+    });
+  }
+  
+  // Create 3D network
+  network3D.createNetwork(nodeData);
+  
+  // Update states for hacked/active nodes
+  gameState.hackedNodes.forEach(index => {
+    network3D.updateNodeState(index, 'hacked');
+  });
+  
+  if (gameState.activeNode !== null) {
+    network3D.updateNodeState(gameState.activeNode, 'active');
+    
+    // Highlight adjacent nodes
+    const adjacentNodes = getAdjacentNodes(gameState.activeNode);
+    adjacentNodes.forEach(adjIndex => {
+      if (!gameState.hackedNodes.has(adjIndex) && !gameState.firewallNodes.has(adjIndex)) {
+        network3D.updateNodeState(adjIndex, 'in-range');
+      }
+    });
+  }
+  
+  gameState.threatenedNodes.forEach(index => {
+    network3D.updateNodeState(index, 'threatened');
+  });
+}
+
+// Update 3D network when game state changes
+function update3DNetworkState() {
+  if (!is3DMode || !network3D) return;
+  
+  // Update active node
+  if (gameState.activeNode !== null) {
+    network3D.updateNodeState(gameState.activeNode, 'active');
+    
+    // Update adjacent nodes
+    const adjacentNodes = getAdjacentNodes(gameState.activeNode);
+    adjacentNodes.forEach(adjIndex => {
+      if (!gameState.hackedNodes.has(adjIndex) && !gameState.firewallNodes.has(adjIndex)) {
+        network3D.updateNodeState(adjIndex, 'in-range');
+        
+        // Update cable
+        network3D.updateCableState(gameState.activeNode, adjIndex, 'active');
+      }
+    });
+  }
+}
+
+// Add event listener for view toggle button
+document.getElementById('viewToggle').addEventListener('click', toggle3DView);
+
+// Update completeHackSequence to sync 3D view
+const originalCompleteHack = completeHackSequence;
+completeHackSequence = function() {
+  originalCompleteHack();
+  update3DNetworkState();
+};
